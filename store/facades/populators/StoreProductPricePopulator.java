@@ -1,35 +1,39 @@
 package com.store.b2b.facades.populators;
 
-import org.apache.log4j.Logger;
+import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class StoreProductPricePopulator {
-    private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
 
-    public void populate(final SourceType source, final TargetType target) {
-        if (source == null || target == null) {
-            LOG.error("Source or Target is null in StoreProductPricePopulator");
+    private static final Logger LOG = LogManager.getLogger(StoreProductPricePopulator.class);
+
+    public void populate(ProductModel source, ProductData target) {
+        List<PriceRowModel> priceRows = source.getPriceRows();
+        if (priceRows == null || priceRows.isEmpty()) {
+            LOG.warn("Price rows are null or empty in StoreProductPricePopulator for Product: " + source.getCode());
+            target.setMsrpPrice(null);  // Or some default value/behavior
+            target.setPmatPrice(null);
             return;
         }
-        if (source.getPriceRows() == null) {
-            LOG.error("Price rows are null in StoreProductPricePopulator");
-            target.setMsrpPrice(null);
-            target.setPMATPrice(null);
-            return;
+
+        Double msrpPrice = null;
+        Double pmatPrice = null;
+
+        for (PriceRowModel priceRow : priceRows) {
+            if (priceRow.getType().equals(PriceType.MSRP)) {
+                msrpPrice = priceRow.getPrice();
+            }
+            if (priceRow.getType().equals(PriceType.PMAT)) {
+                pmatPrice = priceRow.getPrice();
+            }
         }
-        PriceRow msrpPrice = source.getMsrpPrice();
-        PriceRow pmatPrice = source.getPMATPrice();
-        if (msrpPrice == null) {
-            LOG.error("msrpPrice is null");
-            target.setMsrpPrice(null);
-        } else {
-            target.setMsrpPrice(msrpPrice.getValue());
+
+        if(msrpPrice == null || pmatPrice == null) {
+            LOG.warn("msrpPrice or PMATPrice price are null for product: " + source.getCode());
         }
-        if (pmatPrice == null) {
-            LOG.error("PMATPrice is null");
-            target.setPMATPrice(null);
-        } else {
-            target.setPMATPrice(pmatPrice.getValue());
-        }
-        // Continue with other populate logic...
+
+        target.setMsrpPrice(msrpPrice);
+        target.setPmatPrice(pmatPrice);
     }
 }
