@@ -1,47 +1,45 @@
-package com.yourcompany.storefront.controllers;
+// CartPageController.java
+package com.store.b2b.web.controllers;
 
-import de.hybris.platform.core.model.product.ProductModel;
-import de.hybris.platform.servicelayer.product.ProductService;
-import org.apache.commons.lang3.StringUtils;
+import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Logger;
+import com.store.b2b.services.CartService;
+import de.hybris.platform.core.model.product.ProductModel;
 
 @Controller
 public class CartPageController {
-    private static final Logger LOG = LoggerFactory.getLogger(CartPageController.class);
 
-    @Autowired
-    private ProductService productService;
     @Autowired
     private CartService cartService;
 
+    private static final Logger LOGGER = Logger.getLogger(CartPageController.class.getName());
+
     @PostMapping("/cart/add")
-    public String addToCart(@RequestParam("productCode") String productCode,
-                            @RequestParam("qty") int qty,
-                            RedirectAttributes redirectAttributes) {
-        if (StringUtils.isBlank(productCode)) {
-            LOG.error("Attempt to add to cart without a product code");
-            redirectAttributes.addFlashAttribute("error", "No product code provided");
-            return "redirect:/cart";
+    public String addToCart(HttpServletRequest req, Model model) {
+        String productCode = req.getParameter("productCode");
+        if (productCode == null || productCode.isEmpty()) {
+            LOGGER.severe("Product code is missing in addToCart request.");
+            model.addAttribute("cartError", "Product code is missing.");
+            return "cartPageWithError";
         }
-        ProductModel product = productService.getProductForCode(productCode);
+
+        ProductModel product = cartService.getProductForCode(productCode);
         if (product == null) {
-            LOG.error("No ProductModel found for code [{}]", productCode);
-            redirectAttributes.addFlashAttribute("error", "Product not found: " + productCode);
-            return "redirect:/cart";
+            LOGGER.severe("ProductModel for code " + productCode + " is null; cannot add to cart.");
+            model.addAttribute("cartError", "Product not found or unavailable.");
+            return "cartPageWithError";
         }
         try {
-            cartService.addToCart(product, qty);
+            cartService.addProductToCart(product);
         } catch (Exception e) {
-            LOG.error("Exception occurred while adding product [{}] to cart", productCode, e);
-            redirectAttributes.addFlashAttribute("error", "Failed to add product to cart");
-            return "redirect:/cart";
+            LOGGER.severe("Error occurred while adding product to cart: " + e.getMessage());
+            model.addAttribute("cartError", "Unable to add product to cart.");
+            return "cartPageWithError";
         }
-        return "redirect:/cart";
+        return "cartPage";
     }
 }
