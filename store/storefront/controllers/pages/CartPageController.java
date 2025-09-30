@@ -1,62 +1,42 @@
-package com.client.controllers;
+package store.storefront.controllers.pages;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
-import javax.servlet.http.HttpSession;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.ui.Model;
 
-import com.client.facades.cart.ClientCartFacade;
-import com.client.exceptions.CartConversionException;
-
-@RestController
+@Controller
 @RequestMapping("/cart")
 public class CartPageController {
 
     private static final Logger LOG = LoggerFactory.getLogger(CartPageController.class);
 
-    private final ClientCartFacade clientCartFacade;
+    private final ProductService productService;
+    private final CartService cartService;
 
-    @Autowired
-    public CartPageController(ClientCartFacade clientCartFacade) {
-        this.clientCartFacade = clientCartFacade;
+    public CartPageController(ProductService productService, CartService cartService) {
+        this.productService = productService;
+        this.cartService = cartService;
     }
 
-    /**
-     * Convert or save cart by cart code.
-     */
-    @PostMapping("/convert")
-    public ResponseEntity<?> convertSavedCart(@RequestParam("cartCode") String cartCode, HttpSession session) {
-        if (cartCode == null || cartCode.trim().isEmpty()) {
-            LOG.warn("Received empty cartCode for conversion request.");
-            return ResponseEntity.badRequest().body("Cart code must not be empty.");
+    @PostMapping("/add")
+    public String addToCart(@RequestParam String productId, Model model, @RequestParam(required = false) Integer quantity) {
+        ProductModel product = productService.getProductById(productId);
+        if (product == null) {
+            LOG.error("Product not found for productId: {}", productId);
+            model.addAttribute("errorMessage", "Product not found.");
+            return "errorPage";
         }
-
-        String userId = (String) session.getAttribute("userId");
-        if (userId == null) {
-            LOG.error("No user session found during cart conversion for cartCode: {}", cartCode);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User session missing.");
-        }
-
         try {
-            boolean converted = clientCartFacade.convertCart(cartCode, userId);
-            if (converted) {
-                LOG.info("Cart successfully converted for cartCode: {}", cartCode);
-                return ResponseEntity.ok("Cart conversion successful.");
-            } else {
-                LOG.error("Cart conversion failed for cartCode: {}", cartCode);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to convert cart.");
-            }
-        } catch (CartConversionException ex) {
-            LOG.error("Exception during cart conversion for cartCode: {}. Error: {}", cartCode, ex.getMessage(), ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                 .body("Cart conversion failed: " + ex.getMessage());
+            cartService.addProductToCart(product, quantity);
         } catch (Exception ex) {
-            LOG.error("Unexpected error during cart conversion for cartCode: {}. Error: {}", cartCode, ex.getMessage(), ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                 .body("Unexpected error: " + ex.getMessage());
+            LOG.error("Error occurred while adding product to cart", ex);
+            model.addAttribute("errorMessage", "An error occurred while adding the product to the cart.");
+            return "errorPage";
         }
+        return "redirect:/cart";
     }
 }
