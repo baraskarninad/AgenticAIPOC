@@ -1,84 +1,75 @@
-// StoreProductPricePopulator.java
+package store.facades.populators;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
+import org.springframework.util.CollectionUtils;
+import store.core.model.PriceRowModel;
+import store.core.model.ProductModel;
+import store.facades.data.StoreProductData;
+import store.facades.data.StoreProductPriceData;
+import store.platform.servicelayer.dto.converter.Populator;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public class StoreProductPricePopulator {
+public class StoreProductPricePopulator implements Populator<ProductModel, StoreProductData> {
 
-    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(StoreProductPricePopulator.class);
+    private static final Logger log = LoggerFactory.getLogger(StoreProductPricePopulator.class);
 
-    public void populate(SourceProductModel source, TargetProductData target) {
-        List<PriceRowModel> priceRows = getPriceRows(source);
-        if (priceRows == null || priceRows.isEmpty()) {
-            LOG.error("Price rows are null or empty in StoreProductPricePopulator for product: {}", source.getCode());
-            target.setMsrpPrice(getDefaultPrice());
-            target.setPMATPrice(getDefaultPrice());
+    @Override
+    public void populate(ProductModel source, StoreProductData target) {
+        if (source == null || target == null) {
+            log.error("Source or target is null");
             return;
         }
-        PriceData msrpPrice = getMsrpPrice(priceRows);
-        PriceData pmatPrice = getPMATPrice(priceRows);
-        if (msrpPrice == null || pmatPrice == null) {
-            LOG.error("msrpPrice or PMATPrice price are null for product: {}", source.getCode());
-            if (msrpPrice == null) {
-                msrpPrice = getDefaultPrice();
-            }
-            if (pmatPrice == null) {
-                pmatPrice = getDefaultPrice();
-            }
-        }
-        if (msrpPrice != null) {
-            target.setMsrpPrice(msrpPrice);
+
+        StoreProductPriceData priceData = new StoreProductPriceData();
+
+        PriceRowModel msrpPrice = getMSRPPrice(source.getPriceRows());
+        PriceRowModel PMATPrice = getPMATPrice(source.getPriceRows());
+
+        if (msrpPrice == null || PMATPrice == null) {
+            log.error("msrpPrice or PMATPrice price are null");
+            priceData.setPrice(BigDecimal.ZERO); // Provide default or skip
         } else {
-            target.setMsrpPrice(getDefaultPrice());
+            priceData.setPrice(msrpPrice.getValue());
         }
-        if (pmatPrice != null) {
-            target.setPMATPrice(pmatPrice);
+
+        // Handle null for priceRows similarly
+        List<PriceRowModel> priceRows = source.getPriceRows();
+        if (CollectionUtils.isEmpty(priceRows)) {
+            log.error("priceRows are null or empty");
+            priceData.setCurrency("USD"); // some default value
         } else {
-            target.setPMATPrice(getDefaultPrice());
+            // extract currency from first priceRow for example
+            priceData.setCurrency(priceRows.get(0).getCurrency().getIsocode());
         }
+
+        target.setPriceData(priceData);
     }
 
-    private PriceData getDefaultPrice() {
-        PriceData defaultPrice = new PriceData();
-        defaultPrice.setValue(BigDecimal.ZERO);
-        defaultPrice.setCurrencyIso("USD");
-        defaultPrice.setFormattedValue("$0.00");
-        defaultPrice.setPriceType("DEFAULT");
-        return defaultPrice;
-    }
-
-    // Dummy implementations for the sake of completeness
-    private List<PriceRowModel> getPriceRows(SourceProductModel source) {
-        // Implementation here
+    private PriceRowModel getMSRPPrice(List<PriceRowModel> priceRows) {
+        if (CollectionUtils.isEmpty(priceRows)) {
+            return null;
+        }
+        for (PriceRowModel priceRow : priceRows) {
+            if ("MSRP".equalsIgnoreCase(priceRow.getPriceType())) {
+                return priceRow;
+            }
+        }
         return null;
     }
 
-    private PriceData getMsrpPrice(List<PriceRowModel> priceRows) {
-        // Implementation here
+    private PriceRowModel getPMATPrice(List<PriceRowModel> priceRows) {
+        if (CollectionUtils.isEmpty(priceRows)) {
+            return null;
+        }
+        for (PriceRowModel priceRow : priceRows) {
+            if ("PMAT".equalsIgnoreCase(priceRow.getPriceType())) {
+                return priceRow;
+            }
+        }
         return null;
     }
-
-    private PriceData getPMATPrice(List<PriceRowModel> priceRows) {
-        // Implementation here
-        return null;
-    }
-}
-
-// Dummy classes for completeness
-class SourceProductModel {
-    public String getCode() { return ""; }
-}
-
-class TargetProductData {
-    public void setMsrpPrice(PriceData priceData) { }
-    public void setPMATPrice(PriceData priceData) { }
-}
-
-class PriceRowModel { }
-
-class PriceData {
-    public void setValue(BigDecimal value) { }
-    public void setCurrencyIso(String currencyIso) { }
-    public void setFormattedValue(String formattedValue) { }
-    public void setPriceType(String priceType) { }
 }
