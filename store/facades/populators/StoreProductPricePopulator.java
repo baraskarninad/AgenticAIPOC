@@ -1,35 +1,32 @@
+// Example for CartPageController.java
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.math.BigDecimal;
-import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.servlet.ModelAndView;
+import javax.servlet.http.HttpServletRequest;
 
-public class StoreProductPricePopulator {
-    private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
+public class CartPageController {
+    private static final Logger LOG = LoggerFactory.getLogger(CartPageController.class);
 
-    public void populate(ProductSource source, ProductData target) {
-        List<PriceRowData> priceRows = source.getPriceRows();
+    @Autowired
+    private ClientUserSessionFacade clientUserSessionFacade;
+    @Autowired
+    private ProjectFacade projectFacade;
 
-        if (priceRows == null || priceRows.isEmpty()) {
-            LOG.warn("Price rows are null or empty in StoreProductPricePopulator");
-            return;
+    public ModelAndView showCartPage(HttpServletRequest request) {
+        String projectCode = clientUserSessionFacade.getSelectedProjectCode();
+        String projectName = projectFacade.getProjectName(projectCode);
+
+        if (projectCode == null || projectCode.trim().isEmpty() ||
+            projectName == null || projectName.trim().isEmpty()) {
+            LOG.warn("selectprojectCode:: {} select Project Name ::{}", projectCode, projectName);
+            ModelAndView mav = new ModelAndView("cartPage");
+            mav.addObject("errorMessage", "No project selected or project data missing. Please select a valid project.");
+            return mav;
         }
-
-        BigDecimal msrpPrice = null;
-        BigDecimal pmatPrice = null;
-
-        for (PriceRowData priceRow : priceRows) {
-            if ("MSRP".equals(priceRow.getType())) {
-                msrpPrice = priceRow.getValue();
-            } else if ("PMAT".equals(priceRow.getType())) {
-                pmatPrice = priceRow.getValue();
-            }
-        }
-
-        if (msrpPrice == null || pmatPrice == null) {
-            LOG.warn("msrpPrice or PMATPrice price are null");
-        }
-
-        target.setMsrpPrice(msrpPrice);
-        target.setPMATPrice(pmatPrice);
+        // Continue normal processing...
+        ModelAndView mav = new ModelAndView("cartPage");
+        // Add additional logic
+        return mav;
     }
 }
