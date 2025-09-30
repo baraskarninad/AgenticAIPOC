@@ -1,70 +1,62 @@
+package com.client.controllers;
 
-package com.store.storefront.controllers.pages;
-
-import de.hybris.platform.core.model.product.ProductModel;
-import de.hybris.platform.order.CartService;
-import de.hybris.platform.servicelayer.model.ModelService;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Controller;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import javax.servlet.http.HttpSession;
 
-import javax.annotation.Resource;
+import com.client.facades.cart.ClientCartFacade;
+import com.client.exceptions.CartConversionException;
 
-@Controller
+@RestController
 @RequestMapping("/cart")
 public class CartPageController {
 
-    private static final Logger LOG = Logger.getLogger(CartPageController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CartPageController.class);
 
-    @Resource
-    private CartService cartService;
+    private final ClientCartFacade clientCartFacade;
 
-    @Resource
-    private ModelService modelService;
-
-    @PostMapping("/add")
-    public String addToCart(@RequestParam String productCode, @RequestParam int quantity) {
-        ProductModel product = modelService.get(productCode);
-        cartService.addProductToCart(product.getCode(), quantity);
-        return "redirect:/cart/view";
+    @Autowired
+    public CartPageController(ClientCartFacade clientCartFacade) {
+        this.clientCartFacade = clientCartFacade;
     }
 
-    @GetMapping("/view")
-    public String viewCart() {
-        // Simulate viewing cart contents
-        LOG.info("Viewing cart contents");
-        return "cartPage";
-    }
-
-    @PostMapping("/remove")
-    public String removeFromCart(@RequestParam String productCode) {
-        ProductModel product = modelService.get(productCode);
-            LOG.warn("Product is null. Cannot remove from cart.");
-            return "redirect:/cart/view";
-
-        cartService.removeProductFromCart(product.getCode());
-        LOG.info("Removed product from cart: " + product.getCode());
-        return "redirect:/cart/view";
-    }
-
-    @PostMapping("/update")
-    public String updateQuantity(@RequestParam String productCode, @RequestParam int quantity) {
-        ProductModel product = modelService.get(productCode);
-        if (product == null) {
-            LOG.warn("Product is null. Cannot update quantity.");
-            return "redirect:/cart/view";
+    /**
+     * Convert or save cart by cart code.
+     */
+    @PostMapping("/convert")
+    public ResponseEntity<?> convertSavedCart(@RequestParam("cartCode") String cartCode, HttpSession session) {
+        if (cartCode == null || cartCode.trim().isEmpty()) {
+            LOG.warn("Received empty cartCode for conversion request.");
+            return ResponseEntity.badRequest().body("Cart code must not be empty.");
         }
 
-        cartService.updateProductQuantity(product.getCode(), quantity);
-        LOG.info("Updated quantity for product: " + product.getCode());
-        return "redirect:/cart/view";
-    }
+        String userId = (String) session.getAttribute("userId");
+        if (userId == null) {
+            LOG.error("No user session found during cart conversion for cartCode: {}", cartCode);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User session missing.");
+        }
 
-    @PostMapping("/applyCoupon")
-    public String applyCoupon(@RequestParam String couponCode) {
-        // Simulate applying a coupon
-        LOG.info("Applying coupon: " + couponCode);
-        cartService.applyCouponToCart(couponCode);
-        return "redirect:/cart/view";
+        try {
+            boolean converted = clientCartFacade.convertCart(cartCode, userId);
+            if (converted) {
+                LOG.info("Cart successfully converted for cartCode: {}", cartCode);
+                return ResponseEntity.ok("Cart conversion successful.");
+            } else {
+                LOG.error("Cart conversion failed for cartCode: {}", cartCode);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to convert cart.");
+            }
+        } catch (CartConversionException ex) {
+            LOG.error("Exception during cart conversion for cartCode: {}. Error: {}", cartCode, ex.getMessage(), ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body("Cart conversion failed: " + ex.getMessage());
+        } catch (Exception ex) {
+            LOG.error("Unexpected error during cart conversion for cartCode: {}. Error: {}", cartCode, ex.getMessage(), ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body("Unexpected error: " + ex.getMessage());
+        }
     }
 }
