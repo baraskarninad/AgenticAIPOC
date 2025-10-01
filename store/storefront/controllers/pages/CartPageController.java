@@ -1,34 +1,26 @@
-package de.hybris.platform.acceleratorstorefrontcommons.controllers.pages;
-
-import de.hybris.platform.core.model.product.ProductModel;
-import de.hybris.platform.product.ProductService;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-
-@Controller
+// CartPageController.java
+@RestController
+@RequestMapping("/cart")
 public class CartPageController {
-    private static final Logger LOG = Logger.getLogger(CartPageController.class);
-
     @Autowired
-    private ProductService productService;
+    private CartDetailsFacade cartDetailsFacade;
 
-    // ... other fields and methods
-
-    @RequestMapping(value = "/cart/add", method = RequestMethod.POST)
-    public String addToCart(@RequestParam("productCode") String code, Model model) {
-        ProductModel product = productService.getProductForCode(code);
-        if (product == null) {
-            model.addAttribute("errorMessage", "Product not found for code: " + code);
-            LOG.error("Attempted to add non-existent product to cart: " + code);
-            return "redirect:/cart?error=productNotFound";
+    @GetMapping("/lineStockAndPrice")
+    public ResponseEntity<?> getCartLineStockAndPriceData() {
+        try {
+            CartLineStockAndPriceData data = cartDetailsFacade.generateCartLineStockAndPriceData();
+            return ResponseEntity.ok(data);
+        } catch (ErpException e) {
+            System.err.println("ERP system error: " + e.getMessage());
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "The system is temporarily unavailable. Please try again later.");
+            errorResponse.put("details", e.getMessage() != null ? e.getMessage() : "");
+            return new ResponseEntity<>(errorResponse, HttpStatus.SERVICE_UNAVAILABLE);
+        } catch (Exception ex) {
+            System.err.println("Unexpected error: " + ex.getMessage());
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "An unexpected error occurred.");
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        String productCode = product.getCode();
-        // ... rest of logic to add to cart
-        return "redirect:/cart";
     }
 }
