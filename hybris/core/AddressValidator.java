@@ -1,17 +1,23 @@
-package storerepo.hybris.core;
-
-import java.util.regex.Pattern;
-
+// hybris/core/AddressValidator.java
 public class AddressValidator {
 
-    // AddressValidator.java (snippet)
-    private static final Pattern INVALID_CHARS = Pattern.compile("[#$%^&*()=+{}\\[\\]|\\\\:;\"'<>,?~`]");
-    // previously might have included '@', now it is excluded
+    public boolean isValid(Address address) {
+        if (address == null) return false;
+        String streetRegex = "^[a-zA-Z0-9\\s,.-]+$";
+        String cityRegex = "^[a-zA-Z\\s.-]+$";
+        String postalCodeRegex = "^[a-zA-Z0-9\\s-]+$";
 
-    public void validate(String address) {
-        if (INVALID_CHARS.matcher(address).find()) {
-            throw new IllegalArgumentException("Address contains unsupported special character");
+        if (address.getStreet() == null || !address.getStreet().matches(streetRegex)) {
+            return false;
         }
-        // ...rest of validation logic
+        if (address.getCity() == null || !address.getCity().matches(cityRegex)) {
+            return false;
+        }
+        if (address.getPostalCode() == null || !address.getPostalCode().matches(postalCodeRegex)) {
+            return false;
+        }
+        // Add more checks as needed
+
+        return true;
     }
 }
