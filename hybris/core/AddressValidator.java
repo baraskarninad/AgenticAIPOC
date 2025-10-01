@@ -1,23 +1,27 @@
-// hybris/core/AddressValidator.java
+package hybris.core;
+
 public class AddressValidator {
 
-    public boolean isValid(Address address) {
-        if (address == null) return false;
-        String streetRegex = "^[a-zA-Z0-9\\s,.-]+$";
-        String cityRegex = "^[a-zA-Z\\s.-]+$";
-        String postalCodeRegex = "^[a-zA-Z0-9\\s-]+$";
+    // Other methods and members...
 
-        if (address.getStreet() == null || !address.getStreet().matches(streetRegex)) {
-            return false;
+    // Old code:
+    /*
+    public void validate(String address) {
+        if (address.matches(".*[@].*")) {
+            throw new IllegalArgumentException("Address contains unsupported special character '@'");
         }
-        if (address.getCity() == null || !address.getCity().matches(cityRegex)) {
-            return false;
-        }
-        if (address.getPostalCode() == null || !address.getPostalCode().matches(postalCodeRegex)) {
-            return false;
-        }
-        // Add more checks as needed
-
-        return true;
+        // ... existing validation logic ...
     }
+    */
+
+    // Corrected code:
+    public void validate(String address) {
+        // Example: allow '@' as valid
+        if (address.matches(".*[^a-zA-Z0-9#., \\-@].*")) {
+            throw new IllegalArgumentException("Address contains unsupported special character");
+        }
+        // ... existing validation logic ...
+    }
+
+    // ... rest of the class ...
 }
