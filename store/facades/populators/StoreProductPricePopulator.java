@@ -1,43 +1,33 @@
-package store.facades.populators;
+public class StoreProductPricePopulator {
 
-import java.util.List;
-import org.apache.log4j.Logger;
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(StoreProductPricePopulator.class);
 
-public class StoreProductPricePopulator extends SomeBasePopulator {
-    private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
-
-    @Override
-    public void populate(final SourceProductModel product, final TargetProductData target) {
-        if (product == null) {
-            LOG.error("Product is null in StoreProductPricePopulator.");
+    public void populate(final ProductModel source, final ProductData target) {
+        List<PriceRowModel> priceRows = fetchPriceRows(source);
+        if (priceRows == null) {
+            LOG.error("Price rows are null in StoreProductPricePopulator for product: {}", source != null ? source.getCode() : "null");
             return;
         }
-
-        List<PriceRowModel> priceRows = product.getPriceRows();
-        if (priceRows == null || priceRows.isEmpty()) {
-            LOG.error("Price rows are null or empty in StoreProductPricePopulator for product: " + product.getCode());
-            // Optionally set default price values or abort
-            return;
-        }
-        Double msrpPrice = extractMsrpPrice(priceRows);
-        Double pmatPrice = extractPmatPrice(priceRows);
+        PriceModel msrpPrice = findMsrpPrice(priceRows);
+        PriceModel pmatPrice = findPmatPrice(priceRows);
         if (msrpPrice == null || pmatPrice == null) {
-            LOG.error("msrpPrice or PMATPrice price are null for product: " + product.getCode());
-            // Optionally, set default/fallback values or abort
-            return;
+            LOG.error("msrpPrice or PMATPrice price are null in StoreProductPricePopulator for product: {}", source != null ? source.getCode() : "null");
+            // Optionally, set default values or handle accordingly
         }
-        // Proceed with the rest of price population logic
+        // ...rest of the population logic
     }
 
-    private Double extractMsrpPrice(List<PriceRowModel> priceRows) {
-        // Implementation for extracting MSRP price
+    // Placeholder methods for compilation
+    private List<PriceRowModel> fetchPriceRows(ProductModel source) {
+        // ...implementation
         return null;
     }
-
-    private Double extractPmatPrice(List<PriceRowModel> priceRows) {
-        // Implementation for extracting PMAT price
+    private PriceModel findMsrpPrice(List<PriceRowModel> priceRows) {
+        // ...implementation
+        return null;
+    }
+    private PriceModel findPmatPrice(List<PriceRowModel> priceRows) {
+        // ...implementation
         return null;
     }
 }
-
-// Note: Replace `SomeBasePopulator`, `SourceProductModel`, `TargetProductData`, and `PriceRowModel` with actual implementations or imports as per your project.
