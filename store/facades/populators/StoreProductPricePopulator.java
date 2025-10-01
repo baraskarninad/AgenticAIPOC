@@ -1,39 +1,28 @@
-package com.store.b2b.facades.populators;
-
-import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public class StoreProductPricePopulator {
 
-    private static final Logger LOG = LogManager.getLogger(StoreProductPricePopulator.class);
-
     public void populate(ProductModel source, ProductData target) {
+        Double msrpPrice = source.getMsrpPrice();
+        Double pmatPrice = source.getPmatPrice();
         List<PriceRowModel> priceRows = source.getPriceRows();
-        if (priceRows == null || priceRows.isEmpty()) {
-            LOG.warn("Price rows are null or empty in StoreProductPricePopulator for Product: " + source.getCode());
-            target.setMsrpPrice(null);  // Or some default value/behavior
-            target.setPmatPrice(null);
-            return;
+
+        // Null Check for msrpPrice and PMATPrice
+        if (msrpPrice == null) {
+            msrpPrice = 0.0;
+            System.out.println("msrpPrice is null, defaulting to zero");
+        }
+        if (pmatPrice == null) {
+            pmatPrice = 0.0;
+            System.out.println("PMATPrice is null, defaulting to zero");
         }
 
-        Double msrpPrice = null;
-        Double pmatPrice = null;
-
-        for (PriceRowModel priceRow : priceRows) {
-            if (priceRow.getType().equals(PriceType.MSRP)) {
-                msrpPrice = priceRow.getPrice();
-            }
-            if (priceRow.getType().equals(PriceType.PMAT)) {
-                pmatPrice = priceRow.getPrice();
-            }
-        }
-
-        if(msrpPrice == null || pmatPrice == null) {
-            LOG.warn("msrpPrice or PMATPrice price are null for product: " + source.getCode());
+        // Null check for priceRows
+        if (priceRows == null) {
+            priceRows = new ArrayList<>();
+            System.out.println("Price rows are null, initializing to empty list");
         }
 
         target.setMsrpPrice(msrpPrice);
         target.setPmatPrice(pmatPrice);
+        target.setPriceRows(priceRows);
     }
 }
