@@ -1,25 +1,41 @@
 package hybris.core;
 
-import java.util.regex.Pattern;
-
 public class AddressValidator {
 
-    public void validate(String addressField) {
-        // Other validation logic
+    // Existing members and methods...
 
-        // Before
-        // if (addressField.matches(".*[@].*")) {
-        //     throw new IllegalArgumentException("Address contains unsupported special character '@'");
-        // }
-
-        // After: allow '@' character, or make set of allowed special characters configurable
-        String allowedSpecialChars = "-.,#@/ "; // extend as needed
-        if (!addressField.matches("^[a-zA-Z0-9" + Pattern.quote(allowedSpecialChars) + "]+$")) {
-            throw new IllegalArgumentException("Address contains unsupported special characters. Allowed: " + allowedSpecialChars);
+    // Example fix for hybris/core/AddressValidator.java
+    @Override
+    public void validate(Address address) throws AddressValidationException {
+        if(address == null) {
+            throw new AddressValidationException("Address cannot be null");
         }
-
-        // ... possible further validation logic
+        if(address.getStreet() == null || address.getStreet().isEmpty()) {
+            throw new AddressValidationException("Street is required");
+        }
+        if(address.getCity() == null || address.getCity().isEmpty()) {
+            throw new AddressValidationException("City is required");
+        }
+        if(address.getPostalCode() == null || address.getPostalCode().isEmpty()) {
+            throw new AddressValidationException("Postal code is required");
+        }
+        if(address.getCountry() == null || address.getCountry().isEmpty()) {
+            throw new AddressValidationException("Country is required");
+        }
+        // Existing validation logic below
+        // (Preserve all other logic, including older field or format checks, logging, etc.)
+        // Example: existing logic
+        if(!isValidPostalCode(address.getPostalCode())) {
+            throw new AddressValidationException("Invalid postal code format");
+        }
+        // Any other validation already present
     }
 
-    // ... possible other methods or logic
+    private boolean isValidPostalCode(String postalCode) {
+        // Example: simple format check
+        return postalCode.matches("\\d{5}");
+    }
+
+    // Other existing methods...
 }
+```
