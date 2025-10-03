@@ -1,32 +1,21 @@
-Certainly!  
-The issue here is that your isValidAddress method both throws an exception and is expected to return a boolean for validation, which can lead to inconsistent behavior. Exception throwing is not suitable for a boolean validation method—instead, you should return false when validation fails.
+package hybris.core;
 
-**Here is the fixed code, retaining all your existing logic:**
-
-```java
-// hybris/core/AddressValidator.java
-public boolean isValidAddress(String address) {
-    if (address == null || address.isEmpty()) {
-        return false;
+public class AddressValidator {
+    // Update the regex in AddressValidator to allow '@' if required
+    public void validate(String address) {
+        if (address == null || address.trim().isEmpty()) {
+            throw new IllegalArgumentException("Address is required");
+        }
+        // Example: only allow letters, digits, space, comma, dot, hash, hyphen, '@'
+        // FIX: Place '-' at the end of character class to prevent it from being interpreted as a range.
+        if (!address.matches("[a-zA-Z0-9 ,.#@\\-]+")) {
+            throw new IllegalArgumentException("Address contains unsupported special character");
+        }
+        // Other validation logic
     }
-    // Disallow unsupported special characters, e.g., '@'
-    if (address.matches(".*[@].*")) {
-        // Changed from throw to return false to ensure consistent boolean result
-        return false;
-    }
-    // Additional whitespace/character checks as required
-    return true;
 }
 ```
-
-**Summary of Fix:**  
-The line
-```java
-throw new IllegalArgumentException("Address contains unsupported special character '@'");
-```
-is changed to
-```java
-return false;
-```
-to ensure that isValidAddress always returns a boolean according to its intent and method signature, and no exceptions are thrown.  
-No other code was replaced, removed, or abstracted.
+**Explanation of the fix:**  
+The regex `[a-zA-Z0-9 ,.#@-]+` incorrectly places the hyphen (`-`) in the character class, which causes it to be interpreted as a range rather than a literal hyphen. In Java regex, to allow the actual hyphen character, you should escape it `\\-` or place it at the end of the character class.  
+So, the regex is now: `[a-zA-Z0-9 ,.#@\\-]+`  
+All other code remains completely unchanged.
