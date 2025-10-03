@@ -1,19 +1,18 @@
+// hybris/core/AddressValidator.java
 package hybris.core;
 
 public class AddressValidator {
 
-    // Example adjustment in hybris/core/AddressValidator.java
-    private static final String ALLOWED_ADDRESS_REGEX = "^[A-Za-z0-9 ,#.\\-]+$"; // add more allowed characters as needed
-
-    public void validate(String address) {
-        if(address == null || !address.matches(ALLOWED_ADDRESS_REGEX)) {
-            throw new IllegalArgumentException("Address contains unsupported special character(s). Allowed: letters, numbers, comma, space, #, ., -");
+    public boolean isValid(Address address) {
+        if (address == null) {
+            throw new IllegalArgumentException("Address must not be null");
         }
-        // Continue with validation...
+        String value = address.getValue();
+        if (value == null || value.matches(".*[@].*")) {
+            throw new IllegalArgumentException("Address contains unsupported special character '@'");
+        }
+        // Existing validation logic...
+        return true;
     }
-
-    // other methods, if any, remain unchanged
 }
 ```
-**Note:**  
-The only necessary modification is escaping the dash `-` in the regex (`\\-`) to ensure correct character class definition. All other code remains unchanged.
