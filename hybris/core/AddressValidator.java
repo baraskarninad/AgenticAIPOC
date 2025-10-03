@@ -1,12 +1,24 @@
+// In hybris/core/AddressValidator.java
+
 public class AddressValidator {
-    private static final String INVALID_CHARS = "@";
+
     public void validate(String address) {
-        if (address == null) {
-            throw new IllegalArgumentException("Address cannot be null");
+        // Existing character validation regex
+        if (!address.matches("^[A-Za-z0-9 #,\\-]+$")) { // Example regex
+            String invalidChars = address.replaceAll("[A-Za-z0-9 #,\\-]", "");
+            throw new IllegalArgumentException("Address contains invalid characters: '" + invalidChars + "'");
         }
-        if (address.contains(INVALID_CHARS)) {
-            throw new IllegalArgumentException("Address contains unsupported special character '@'. Please remove special characters and try again.");
-        }
-        // additional validation logic...
+        // ... rest of validation
     }
+
+    // To provide user-friendly messaging:
+    public void validateWithMessage(String address) {
+        String invalidChars = address.replaceAll("[A-Za-z0-9 #,\\-]", "");
+        if (!invalidChars.isEmpty()) {
+            throw new IllegalArgumentException("Address contains invalid characters: '" + invalidChars + "'");
+        }
+        // ... rest of validation
+    }
+
 }
+```
