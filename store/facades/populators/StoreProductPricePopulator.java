@@ -1,33 +1,55 @@
+package store.facades.populators;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
 public class StoreProductPricePopulator {
 
-    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(StoreProductPricePopulator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
 
-    public void populate(final ProductModel source, final ProductData target) {
-        List<PriceRowModel> priceRows = fetchPriceRows(source);
+    public void populate(ProductModel product, StoreProductData target) {
+        List<PriceRowModel> priceRows = product.getPriceRows();
+        Double msrpPrice = product.getMsrpPrice();
+        Double pmatPrice = product.getPmatPrice();
+
         if (priceRows == null) {
-            LOG.error("Price rows are null in StoreProductPricePopulator for product: {}", source != null ? source.getCode() : "null");
-            return;
+            LOG.error("Price rows are null for product: {}", product.getCode());
+            priceRows = java.util.Collections.emptyList();
         }
-        PriceModel msrpPrice = findMsrpPrice(priceRows);
-        PriceModel pmatPrice = findPmatPrice(priceRows);
-        if (msrpPrice == null || pmatPrice == null) {
-            LOG.error("msrpPrice or PMATPrice price are null in StoreProductPricePopulator for product: {}", source != null ? source.getCode() : "null");
-            // Optionally, set default values or handle accordingly
+        if (msrpPrice == null) {
+            LOG.error("msrpPrice is null for product: {}", product.getCode());
+            msrpPrice = 0.0;
         }
-        // ...rest of the population logic
-    }
+        if (pmatPrice == null) {
+            LOG.error("pmatPrice is null for product: {}", product.getCode());
+            pmatPrice = 0.0;
+        }
 
-    // Placeholder methods for compilation
-    private List<PriceRowModel> fetchPriceRows(ProductModel source) {
-        // ...implementation
-        return null;
-    }
-    private PriceModel findMsrpPrice(List<PriceRowModel> priceRows) {
-        // ...implementation
-        return null;
-    }
-    private PriceModel findPmatPrice(List<PriceRowModel> priceRows) {
-        // ...implementation
-        return null;
+        // existing price population logic follows
+        target.setPriceRows(priceRows);
+        target.setMsrpPrice(msrpPrice);
+        target.setPmatPrice(pmatPrice);
+
+        if (!priceRows.isEmpty()) {
+            double minPrice = priceRows.stream()
+                .mapToDouble(PriceRowModel::getPrice)
+                .min()
+                .orElse(0.0);
+
+            double maxPrice = priceRows.stream()
+                .mapToDouble(PriceRowModel::getPrice)
+                .max()
+                .orElse(0.0);
+
+            target.setMinPrice(minPrice);
+            target.setMaxPrice(maxPrice);
+        } else {
+            target.setMinPrice(0.0);
+            target.setMaxPrice(0.0);
+        }
+
+        target.setFinalPrice(Math.min(msrpPrice, pmatPrice));
     }
 }
