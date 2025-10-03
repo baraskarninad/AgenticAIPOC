@@ -1,15 +1,19 @@
 package hybris.core;
 
-import java.util.regex.Pattern;
-
 public class AddressValidator {
-    // Updated pattern to allow '@' character
-    private static final Pattern UNSUPPORTED_CHARS = Pattern.compile("[$&+,:;=\\?#|'<>.^*()%!-]");
 
     public void validate(String address) {
-        if (UNSUPPORTED_CHARS.matcher(address).find()) {
-            throw new IllegalArgumentException("Address contains unsupported special character");
+        // Old validation - strict, e.g., only alphanumeric + limited special chars
+        // New: Permit common address chars (e.g., #, ',', '.', '-', etc.), but still filter scripts or invalid input
+        if(address == null || address.isEmpty()) {
+            throw new IllegalArgumentException("Address is required.");
         }
-        // ... existing logic ...
+        // Fix: Escape '-' properly and move it to the end or start of the character class, and escape '.'
+        if (!address.matches("^[a-zA-Z0-9 #,./\\-]+$") ) {
+            throw new IllegalArgumentException("Address contains unsupported special characters. Allowed are: letters, numbers, space, #, comma, dot, dash, slash.");
+        }
+        // other logic...
     }
+
 }
+```
