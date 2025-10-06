@@ -1,53 +1,34 @@
 package store.facades.populators;
 
-import org.apache.log4j.Logger;
-import de.hybris.platform.converters.Populator;
-import de.hybris.platform.servicelayer.dto.converter.ConversionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.List;
 
-// Assuming these are your domain/model classes
-import store.model.SourceType;
-import store.dto.TargetType;
+public class StoreProductPricePopulator extends SomeBasePopulator {
 
-public class StoreProductPricePopulator implements Populator<SourceType, TargetType> {
-
-    private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
 
     @Override
-    public void populate(final SourceType source, final TargetType target) throws ConversionException {
-        if (source == null) {
-            throw new IllegalArgumentException("Parameter source cannot be null.");
+    public void populate(final SourceProduct source, final TargetProduct target) {
+        if (source == null || target == null) {
+            LOG.error("Source or Target is null in StoreProductPricePopulator");
+            return;
         }
-        if (target == null) {
-            throw new IllegalArgumentException("Parameter target cannot be null.");
+        List<PriceRowModel> priceRows = null;
+        try {
+            priceRows = source.getPriceRows();
+        } catch (Exception e) {
+            LOG.error("Exception while fetching price rows for product: {}", source != null ? source.getCode() : "null", e);
+            target.setMsrpPrice(null);
+            target.setPmatPrice(null);
+            return;
         }
-        
-        // Example of copying simple fields
-        target.setId(source.getId());
-        target.setName(source.getName());
-        target.setDescription(source.getDescription());
-
-        // Existing/Legacy logic for price population
-        if (source.getPriceRows() == null) {
-            LOG.warn("Price rows are null in StoreProductPricePopulator");
-            target.setPriceRows(Collections.emptyList()); // FIX: set default empty list instead of returning early
-        } else {
-            target.setPriceRows(source.getPriceRows());
+        if (priceRows == null || priceRows.isEmpty()) {
+            LOG.error("Price rows are null or empty for product: {}", source.getCode());
+            target.setMsrpPrice(null);
+            target.setPmatPrice(null);
+            return;
         }
-
-        // Other field mappings
-        target.setAvailable(source.isAvailable());
-        target.setCategories(source.getCategories());
-        target.setBrand(source.getBrand());
-
-        // Additional logic that may come after price row processing
-        if (source.getAttributes() != null && !source.getAttributes().isEmpty()) {
-            target.setAttributes(source.getAttributes());
-        }
-
-        // Handle images if available
-        if (source.getImageUrls() != null) {
-            target.setImageUrls(source.getImageUrls());
-        }
+        // Continue normal price population logic here
     }
 }
-```
