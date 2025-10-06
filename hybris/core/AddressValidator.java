@@ -1,26 +1,18 @@
-package your.package.name.here;
+// In core-customize/hybris/bin/custom/hybris/core/AddressValidator.java
+package hybris.core;
 
 public class AddressValidator {
 
-    // Example code snippet for AddressValidator.java (line 47)
-    // Fixed regex to escape the dash character properly inside the character class
-    private static final String ALLOWED_ADDRESS_REGEX = "^[a-zA-Z0-9 #,./\\-]+$";
-
     public void validate(String address) {
-        if (!address.matches(ALLOWED_ADDRESS_REGEX)) {
-            throw new IllegalArgumentException("Address contains unsupported special character(s). Allowed: letters, numbers, space, #, comma, dot, dash, slash.");
+        if (address == null || address.isEmpty()) {
+            throw new IllegalArgumentException("Address is empty. Please provide a non-empty address.");
         }
-        // ... rest of validation logic
+        if (!address.matches("^[a-zA-Z0-9 ,.\\-]*$")) { // Allow only alphanumerics, space, comma, period, dash
+            throw new IllegalArgumentException("Address contains unsupported special character. Allowed characters: letters, numbers, spaces, comma (,), period (.), and dash (-).");
+        }
+        // ... existing validation logic ...
     }
 
-    // ... any other methods or logic in the class
+    // ... other methods (if any) ...
 
 }
-```
-**Fix Applied:**  
-The dash (-) inside a regex character class (`[]`) must appear at the start or end, or be escaped, to prevent it forming a range. Changed the regex from  
-`"^[a-zA-Z0-9 #,.-/]+$"`  
-to  
-`"^[a-zA-Z0-9 #,./\\-]+$"`  
-so the dash (`-`) is properly escaped and interpreted as a literal dash.  
-All other logic intact and unchanged.
