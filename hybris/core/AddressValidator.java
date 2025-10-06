@@ -1,4 +1,4 @@
-package com.hybris.core.validation;
+package hybris.core;
 
 import org.apache.log4j.Logger;
 
