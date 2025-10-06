@@ -1,18 +1,19 @@
-// In hybris/core/AddressValidator.java
-// Example: Adjust the regular expression to allow '@' only if permitted by business rules
 package hybris.core;
 
 public class AddressValidator {
 
-    // Example: Adjust the regular expression to allow '@' only if permitted by business rules
-    // Fixed regex: Escape '-' to be last or first or escape properly; '/' does not need escaping in a character class.
-    // The hyphen should be either at the start/end or escaped; here moving it to the end.
-    private static final String ADDRESS_ALLOWED_PATTERN = "^[a-zA-Z0-9 ,#@/\\-]+$";
-
-    public boolean isValid(String address) {
-        if (address == null) return false;
-        return address.matches(ADDRESS_ALLOWED_PATTERN); // allow @
+    // Example: Update validate() to allow '@' character
+    public boolean validate(String address) {
+        // Allowed special characters, now includes '@'
+        String allowed = ",.;:/#'@-";
+        for (char c : address.toCharArray()) {
+            if (!Character.isLetterOrDigit(c) && allowed.indexOf(c) == -1 && !Character.isWhitespace(c)) {
+                throw new IllegalArgumentException("Address contains unsupported special character '" + c + "'");
+            }
+        }
+        // Other validations...
+        return true;
     }
 
+    // Add any other methods, fields, or logic here that were present in the original class.
 }
-```
