@@ -1,45 +1,84 @@
+/*
+ * Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+ */
 package store.facades.populators;
 
-import java.util.List;
+import de.hybris.platform.commercefacades.product.PriceDataFactory;
+import de.hybris.platform.commercefacades.product.converters.populator.ProductPricePopulator;
+import de.hybris.platform.commercefacades.product.data.PriceData;
+import de.hybris.platform.commercefacades.product.data.PriceDataType;
+import de.hybris.platform.commercefacades.product.data.ProductData;
+import de.hybris.platform.commerceservices.price.CommercePriceService;
+import de.hybris.platform.core.model.product.ProductModel;
+import de.hybris.platform.europe1.model.PriceRowModel;
+import de.hybris.platform.jalo.order.price.PriceInformation;
+import de.hybris.platform.servicelayer.dto.converter.ConversionException;
+import de.hybris.platform.servicelayer.session.SessionService;
+import de.hybris.platform.servicelayer.user.UserService;
 
-import org.apache.log4j.Logger;
+import java.math.BigDecimal;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Objects;
 
-public class StoreProductPricePopulator {
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Required;
 
-    private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
+import com.store.b2b.core.constants.storeCoreConstants;
 
-    public void populate(List<PriceRow> priceRows, Price msrpPrice, Price pmatPrice) {
+import javax.annotation.Resource;
 
-        if (priceRows == null || priceRows.isEmpty()) {
-            LOG.error("Price rows are null or empty in StoreProductPricePopulator");
-            // Optionally: handle missing prices, e.g., set defaults, skip population, etc.
-            return;
-        }
-        if (msrpPrice == null || pmatPrice == null) {
-            LOG.error("msrpPrice or PMATPrice price are null");
-            // Optionally: handle missing price types
-            return;
-        }
-        // Continue with normal population logic below
 
-        // Example logic for population (retained from original code):
-        for (PriceRow row : priceRows) {
-            // process each row as per your business logic
-        }
+/**
+ * Populate the product data with the price information
+ */
+public class StoreProductPricePopulator<SOURCE extends ProductModel, TARGET extends ProductData>
+		extends ProductPricePopulator<SOURCE, TARGET>
+{
+	private CommercePriceService commercePriceService;
+	private PriceDataFactory priceDataFactory;
+	private UserService userService;
 
-        // Potential msrp and pmat handling logic
-        // ...
-    }
+	@Resource(name = "sessionService")
+	private SessionService sessionService;
 
-    // Other methods and logic if any
-    // ...
+	@Override
+	public void populate(final SOURCE productModel, final TARGET productData) throws ConversionException {
+		final PriceDataType priceType = determinePriceType(productModel);
+		final PriceInformation info = fetchPriceInformation(productModel, priceType);
+		final boolean isAnonymousUser = userService.isAnonymousUser(userService.getCurrentUser());
+		if (isTrackYourOrderPage()) {
+			handleTrackYourOrderPage(info, priceType, productData);
+		} else {
+			handleRegularPrice(info, productModel, priceType, productData);
+		}
+		// adding price population logic for CCC-767 EU Pricing here, to keep the previous flow intact, -----
+		// if in future price population logic is to be changes for anonymous user kindly make changes here,
+		// for anonymous user listPrice is slashed price and price is the price on display for purchase,
+		//some products are excluded check the flag PMATPrice
 
-    // Dummy classes for compiling standalone example
-    public static class PriceRow {
-        // Implementation details...
-    }
 
-    public static class Price {
-        // Implementation details...
-    }
+		if(isAnonymousUser && Boolean.TRUE.equals(productModel.getPMATPrice())){
+			Collection<PriceRowModel> priceRows = productModel.getEurope1Prices();
+				try{
+				PriceRowModel msrpPrice = getMSRPPriceRow(priceRows);
+				PriceRowModel PMATPrice = getPMATPriceRow(priceRows);
+				
+						PriceData listingPrice = priceDataFactory.create(priceType, BigDecimal.valueOf(msrpPrice.getPrice()), msrpPrice.getCurrency());
+						PriceData price = priceDataFactory.create(priceType, BigDecimal.valueOf(PMATPrice.getPrice()), PMATPrice.getCurrency());
+
+						productData.setListPrice(listingPrice);
+						productData.setPrice(price);
+					
+				}
+				catch(Exception e){
+					LOG.error("msrpPrice or PMATPrice price are null ");
+				}
+			
+		}
+	}
+
 }
