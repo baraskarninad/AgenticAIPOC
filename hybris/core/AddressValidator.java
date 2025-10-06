@@ -1,46 +1,18 @@
 package hybris.core;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-
-public class AddressValidator implements ConstraintValidator<AddressConstraint, String> {
-
-    @Override
-    public void initialize(AddressConstraint constraintAnnotation) {
-        // initialization logic if needed
-    }
-
-    @Override
-    public boolean isValid(String addressField, ConstraintValidatorContext context) {
-        // Allow only letters, numbers, spaces, and basic punctuation
-        String pattern = "^[\\w\\s.,'-]*$";
-        if (addressField == null || !addressField.matches(pattern)) {
-            context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate("Address contains invalid characters.")
-                   .addConstraintViolation();
-            return false;
+public class AddressValidator {
+    public ValidationResult validate(Address address) {
+        if (address == null) {
+            return ValidationResult.invalid("Address cannot be null");
         }
-        // Existing logic continues here
-        /*
-         * Keep all existing validation logic below this point,
-         * for example, checks for minimum or maximum length,
-         * or other business rules.
-         */
-        if (addressField != null && addressField.trim().isEmpty()) {
-            context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate("Address must not be empty.")
-                   .addConstraintViolation();
-            return false;
+        String value = address.getValue();
+        if (value == null) {
+            return ValidationResult.invalid("Address value cannot be null");
         }
-        // Example of a length check
-        if (addressField != null && addressField.length() > 200) {
-            context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate("Address is too long.")
-                   .addConstraintViolation();
-            return false;
+        if (value.contains("@")) {
+            return ValidationResult.invalid("Address contains unsupported special character '@'");
         }
-        // Any other pre-existing checks or rules remain unchanged
-
-        return true;
+        // Add further special character checks as needed
+        return ValidationResult.valid();
     }
 }
