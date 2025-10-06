@@ -1,14 +1,19 @@
-// In hybris/core/AddressValidator.java
+package hybris.core;
+
+import java.util.regex.Pattern;
+
 public class AddressValidator {
-    public void validate(String address) {
+
+    public ValidationResult validate(String address) {
         if (address == null) {
-            throw new IllegalArgumentException("Address cannot be null");
+            return ValidationResult.invalid("Address is required.");
         }
-        // Define allowed characters (example: letters, numbers, spaces, commas, periods, etc.)
-        if (!address.matches("[a-zA-Z0-9\\s,\\.\\-]+")) {  // FIX: Properly escape regex for \s . -
-            throw new IllegalArgumentException("Address contains unsupported special characters. Allowed: letters, numbers, spaces, commas, periods, hyphens.");
+        // Block unsupported characters (e.g., '@')
+        Pattern p = Pattern.compile("^[a-zA-Z0-9 #,\\.\\-]*$"); // add allowed characters; escape '.' and '-' for regex character class
+        if (!p.matcher(address).matches()) {
+            return ValidationResult.invalid("Address contains unsupported characters. Allowed: letters, numbers, spaces, #, ',', '.', '-'.");
         }
-        // Continue with other validations
+        // existing validations ...
+        return ValidationResult.valid();
     }
 }
-```
