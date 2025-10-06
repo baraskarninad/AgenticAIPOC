@@ -1,18 +1,21 @@
-// In core-customize/hybris/bin/custom/hybris/core/AddressValidator.java
-package hybris.core;
-
 public class AddressValidator {
 
-    public void validate(String address) {
-        if (address == null || address.isEmpty()) {
-            throw new IllegalArgumentException("Address is empty. Please provide a non-empty address.");
+    // Example snippet for input validation improvement
+    public boolean validateAddress(Address address) {
+        if(address == null) return false;
+        if(containsInvalidChars(address.getStreet()) || containsInvalidChars(address.getCity())) {
+            log.warn("Address validation failed due to invalid characters.");
+            return false;
         }
-        if (!address.matches("^[a-zA-Z0-9 ,.\\-]*$")) { // Allow only alphanumerics, space, comma, period, dash
-            throw new IllegalArgumentException("Address contains unsupported special character. Allowed characters: letters, numbers, spaces, comma (,), period (.), and dash (-).");
-        }
-        // ... existing validation logic ...
+        // other validation logic ...
+        return true;
     }
 
-    // ... other methods (if any) ...
+    private boolean containsInvalidChars(String input) {
+        // Allow letters, numbers, spaces, hyphens, and dots only
+        return input != null && !input.matches("[\\w\\s\\-.]+");
+    }
+
+    // other methods, variables, etc.
 
 }
