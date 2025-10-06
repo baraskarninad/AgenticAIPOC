@@ -2,10 +2,11 @@ package store.facades.populators;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
-import org.springframework.util.Assert;
-
-import java.math.BigDecimal;
+import de.hybris.platform.converters.Populator;
+import de.hybris.platform.servicelayer.dto.converter.ConversionException;
+import store.facades.data.PriceData;
+import store.facades.data.SourceType;
+import store.facades.data.TargetType;
 
 public class StoreProductPricePopulator implements Populator<SourceType, TargetType> {
 
@@ -13,20 +14,19 @@ public class StoreProductPricePopulator implements Populator<SourceType, TargetT
 
     @Override
     public void populate(final SourceType source, final TargetType target) throws ConversionException {
-        BigDecimal msrpPrice = source.getMsrpPrice();
-        BigDecimal pmatPrice = source.getPmatPrice();
-
+        if (source == null || target == null) {
+            LOG.error("Source or Target is null in StoreProductPricePopulator");
+            return;
+        }
+        PriceData msrpPrice = source.getMsrpPrice();
+        PriceData pmatPrice = source.getPmatPrice();
         if (msrpPrice == null || pmatPrice == null) {
-            LOG.error("msrpPrice or PMATPrice price are null for product id: {}", source.getProductId());
-            // Optionally set a default value or handle null case gracefully
-            target.setMsrpPrice(BigDecimal.ZERO);
-            target.setPmatPrice(BigDecimal.ZERO);
-            // or throw new ConversionException("Price data missing for product: " + source.getProductId());
+            LOG.error("msrpPrice or PMATPrice price are null in StoreProductPricePopulator for product: {}", source.getCode());
+            // Optionally set default/fallback values or abort cleanly
             return;
         }
         target.setMsrpPrice(msrpPrice);
         target.setPmatPrice(pmatPrice);
     }
 
-    // Existing methods and logic remain here (not modified or removed)
 }
