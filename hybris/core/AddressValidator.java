@@ -1,22 +1,30 @@
 package hybris.core;
 
-import java.util.regex.Pattern;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+// In hybris/core/AddressValidator.java
 public class AddressValidator {
 
-    // In hybris/core/AddressValidator.java
-    private static final Pattern ALLOWED_CHARS = Pattern.compile("^[a-zA-Z0-9 .,#\\-'/&()]+$");
+    private static final Logger LOGGER = Logger.getLogger(AddressValidator.class.getName());
 
-    public void validate(Address address) {
-        String addr = address.getFullAddress(); // or appropriate field(s)
-        if (addr == null || !ALLOWED_CHARS.matcher(addr).matches()) {
-            throw new IllegalArgumentException("Address contains unsupported special character. Allowed: letters, numbers, space, . , # - ' / & ( )");
+    // Example adjustment to allow '@' and other common special chars:
+    private static final String ALLOWED_ADDRESS_CHARS = "[a-zA-Z0-9 \\-#.,'@]";
+
+    public void validate(String address) {
+        if (address == null || address.isEmpty()) {
+            LOGGER.log(Level.WARNING, "Address validation failed: Address is empty or null.");
+            throw new IllegalArgumentException("Address cannot be empty");
         }
-        // existing validation logic
+        // Adjust regex to allow '@' and document behavior
+        if (!address.matches("^" + ALLOWED_ADDRESS_CHARS + "+$")) {
+            LOGGER.log(Level.WARNING, "Address validation failed: Unsupported special characters found in address: \"{0}\"", address);
+            throw new IllegalArgumentException(
+               "Address contains unsupported special characters. Allowed: letters, digits, - # . , ' @ and spaces "
+            );
+        }
+        // (additional validations...)
     }
+
+    // Also add clear logging and update frontend validation rules accordingly.
 }
-```
-**Fix applied:**  
-The original regex string `"^[a-zA-Z0-9 .,#\-'/&()]+$"` was not escaping the backslash for `\-` in a Java string, which is required. The fix is to double the backslash: `"\\-"`.  
-Now the pattern compiles and matches the dash (`-`) character as intended.  
-All other logic and formatting remain unchanged.
