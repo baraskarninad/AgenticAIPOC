@@ -1,55 +1,62 @@
 package store.facades.populators;
 
-import de.hybris.platform.commercefacades.product.data.PriceData;
-import de.hybris.platform.commercefacades.product.data.ProductData;
-import de.hybris.platform.commerceservices.converter.Populator;
-import de.hybris.platform.core.model.product.ProductModel;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import store.model.SourceProductModel;
-import store.facades.data.TargetProductData;
-import store.model.PriceRowModel;
-import store.services.PriceService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
+import store.core.model.ProductModel;
+import store.facades.data.ProductData;
+import store.facades.data.PriceData;
+import store.facades.data.CurrencyData;
+import store.core.enums.PriceTypeEnum;
 
-import java.util.List;
+public class StoreProductPricePopulator {
 
-public class StoreProductPricePopulator implements Populator<SourceProductModel, TargetProductData>
-{
-    private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
 
     private PriceService priceService;
 
-    @Override
-    public void populate(final SourceProductModel source, final TargetProductData target) throws ConversionException
-    {
-        final List<PriceRowModel> priceRows = priceService.getPriceRowsForProduct(source);
-        if (priceRows == null || priceRows.isEmpty()) {
-            LOG.error("Price rows are null or empty for product: {}", source != null ? source.getCode() : "null");
-            // You may want to set a default price, throw a controlled exception, or handle gracefully here
-            return;
+    public void populate(final ProductModel product, final ProductData target) {
+        Assert.notNull(product, "Parameter product cannot be null.");
+        Assert.notNull(target, "Parameter target cannot be null.");
+
+        PriceData msrpPrice = null;
+        PriceData pmatPrice = null;
+        CurrencyData currency = null;
+
+        if (product.getCurrency() != null) {
+            currency = new CurrencyData();
+            currency.setIsocode(product.getCurrency().getIsocode());
+            target.setCurrency(currency);
         }
-        // Example logic: calculate price and assign
-        PriceRowModel bestPrice = null;
-        for (PriceRowModel priceRow : priceRows) {
-            if (bestPrice == null || priceRow.getPrice() < bestPrice.getPrice()) {
-                bestPrice = priceRow;
+
+        if (product.getPrices() != null) {
+            for (final PriceModel priceModel : product.getPrices()) {
+                if (PriceTypeEnum.MSRP.equals(priceModel.getPriceType())) {
+                    msrpPrice = priceService.createPriceData(priceModel);
+                }
+                if (PriceTypeEnum.PMAT.equals(priceModel.getPriceType())) {
+                    pmatPrice = priceService.createPriceData(priceModel);
+                }
             }
         }
-        if (bestPrice != null) {
-            target.setPrice(bestPrice.getPrice());
-            target.setCurrency(bestPrice.getCurrencyIso());
+
+        // Fix applied: Check for msrpPrice or pmatPrice null and log.
+        if (msrpPrice == null || pmatPrice == null) {
+            LOG.error("MSRP or PMAT price is null for product: {}", product != null ? product.getCode() : "unknown");
+            // Optionally: set default price or inform frontend of missing data
+            return;
+        }
+
+        target.setMsrpPrice(msrpPrice);
+        target.setPmatPrice(pmatPrice);
+
+        if (currency != null) {
+            msrpPrice.setCurrencyIso(currency.getIsocode());
+            pmatPrice.setCurrencyIso(currency.getIsocode());
         }
     }
 
-    @Required
-    public void setPriceService(final PriceService priceService)
-    {
+    public void setPriceService(final PriceService priceService) {
         this.priceService = priceService;
-    }
-
-    public PriceService getPriceService()
-    {
-        return priceService;
     }
 }
