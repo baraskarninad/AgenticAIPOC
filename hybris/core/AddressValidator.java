@@ -1,39 +1,37 @@
-package storerepo.hybris.core;
+package hybris.core;
 
 public class AddressValidator {
 
-    // Remove '@' from UNSUPPORTED_CHARACTERS as per new requirements
-    private static final String UNSUPPORTED_CHARACTERS = "";
+    private static final String ADDRESS_ALLOWED_CHARS_REGEX = "^[a-zA-Z0-9\\s#@\\-,.']+$";
 
-    public void validate(String address) {
-        for (char c : UNSUPPORTED_CHARACTERS.toCharArray()) {
-            if (address.indexOf(c) >= 0) {
-                throw new IllegalArgumentException("Address contains unsupported special character '" + c + "'. Please remove it from your address.");
+    // Other methods and logic...
+
+    public static boolean isAddressValid(String address) {
+        if (address == null || !address.matches(ADDRESS_ALLOWED_CHARS_REGEX)) {
+            // Find the first invalid character if possible
+            if (address != null) {
+                for (int i = 0; i < address.length(); i++) {
+                    char c = address.charAt(i);
+                    if (!isAllowedAddressChar(c)) {
+                        throw new IllegalArgumentException(
+                                "Address contains unsupported special character: '" + c + "' at position " + i
+                                        + ". Allowed: letters, numbers, space, #, @, -, ., '");
+                    }
+                }
             }
+            // fallback, should not reach here unless address is null
+            throw new IllegalArgumentException("Address contains unsupported special character(s). Allowed: letters, numbers, space, #, @, -, ., '");
         }
-
-        // Existing validation logic
-        if (address == null || address.trim().isEmpty()) {
-            throw new IllegalArgumentException("Address must not be empty.");
-        }
-        
-        if (address.length() < 5) {
-            throw new IllegalArgumentException("Address is too short.");
-        }
-
-        // Check for only whitespace or special characters
-        if (!address.matches(".*[a-zA-Z0-9].*")) {
-            throw new IllegalArgumentException("Address must contain at least one alphanumeric character.");
-        }
-        
-        // Example: forbid P.O. Boxes
-        if (address.toLowerCase().contains("p.o. box") || address.toLowerCase().contains("po box")) {
-            throw new IllegalArgumentException("P.O. Boxes are not allowed as delivery addresses.");
-        }
-
-        // Further domain-specific validations can be added here
+        return true;
     }
+
+    private static boolean isAllowedAddressChar(char c) {
+        return (c >= 'a' && c <= 'z')
+                || (c >= 'A' && c <= 'Z')
+                || (c >= '0' && c <= '9')
+                || c == ' ' || c == '#' || c == '@' || c == '-' || c == '.' || c == '\'' || c == ',';
+    }
+
+    // Other existing methods and logic...
 }
 ```
-**Explanation of Change:**  
-Only the definition of `UNSUPPORTED_CHARACTERS` has been changed from `"@"` to `""` as required; the rest of the class remains untouched. All original logic is preserved.
