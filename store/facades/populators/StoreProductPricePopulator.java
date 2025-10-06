@@ -1,66 +1,24 @@
 package store.facades.populators;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.log4j.Logger;
 
-public class StoreProductPricePopulator {
+public class StoreProductPricePopulator implements Populator<SourceProduct, TargetProduct> {
 
     private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
 
-    public void populateProductPrices(SomeSource source, SomeTarget target) {
-        BigDecimal msrpPrice = source.getMsrpPrice();
-        BigDecimal pmatPrice = source.getPmatPrice();
-        List<PriceRow> priceRows = source.getPriceRows();
-
-        if (msrpPrice == null || pmatPrice == null) {
-            LOG.error("msrpPrice or PMATPrice price are null. Applying default value 0.0");
-            msrpPrice = msrpPrice != null ? msrpPrice : BigDecimal.ZERO;
-            pmatPrice = pmatPrice != null ? pmatPrice : BigDecimal.ZERO;
+    @Override
+    public void populate(final SourceProduct source, final TargetProduct target) {
+        if(source.getMsrpPrice() == null || source.getPmatPrice() == null) {
+            LOG.error("msrpPrice or PMATPrice price are null. Check data ingestion or ERP integration.");
+            // Optional: set default value or skip processing
+            // FIX: Set default values instead of just returning
+            target.setMsrpPrice(source.getMsrpPrice() != null ? source.getMsrpPrice() : BigDecimal.ZERO);
+            target.setPmatPrice(source.getPmatPrice() != null ? source.getPmatPrice() : BigDecimal.ZERO);
+            return;
         }
-        if (priceRows == null) {
-            LOG.error("Price rows are null in StoreProductPricePopulator. Initializing to empty list.");
-            priceRows = new ArrayList<>();
-        }
-
-        // Continue with the rest of the population logic
-        target.setMsrpPrice(msrpPrice);
-        target.setPmatPrice(pmatPrice);
-        target.setPriceRows(priceRows);
-
-        // More logic here
-        if (!priceRows.isEmpty()) {
-            for (PriceRow row : priceRows) {
-                // more processing logic
-                if (row.getType().equals("special")) {
-                    BigDecimal specialPrice = row.getPrice();
-                    if (specialPrice == null) {
-                        LOG.warn("Special price row has null price. Setting to 0.0");
-                        row.setPrice(BigDecimal.ZERO);
-                    }
-                }
-            }
-        }
-
-        // Assume more logic as needed
-    }
-
-    // Placeholder classes to compile
-    public static class SomeSource {
-        public BigDecimal getMsrpPrice() { return null; }
-        public BigDecimal getPmatPrice() { return null; }
-        public List<PriceRow> getPriceRows() { return null; }
-    }
-    public static class SomeTarget {
-        public void setMsrpPrice(BigDecimal price) {}
-        public void setPmatPrice(BigDecimal price) {}
-        public void setPriceRows(List<PriceRow> rows) {}
-    }
-    public static class PriceRow {
-        public String getType() { return ""; }
-        public BigDecimal getPrice() { return null; }
-        public void setPrice(BigDecimal price) {}
+        target.setMsrpPrice(source.getMsrpPrice());
+        target.setPmatPrice(source.getPmatPrice());
+        // ... rest of the population logic
     }
 }
 ```
