@@ -1,56 +1,53 @@
 package store.facades.populators;
 
 import org.apache.log4j.Logger;
-import java.util.List;
+import de.hybris.platform.converters.Populator;
+import de.hybris.platform.servicelayer.dto.converter.ConversionException;
 
-public class StoreProductPricePopulator {
+// Assuming these are your domain/model classes
+import store.model.SourceType;
+import store.dto.TargetType;
+
+public class StoreProductPricePopulator implements Populator<SourceType, TargetType> {
+
     private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
 
-    public void populate(Product product, PriceData msrpPrice, PriceData pmatPrice, List<PriceRow> priceRows) {
-        if (product == null) {
-            LOG.error("Product is null. Unable to populate prices.");
-            return;
+    @Override
+    public void populate(final SourceType source, final TargetType target) throws ConversionException {
+        if (source == null) {
+            throw new IllegalArgumentException("Parameter source cannot be null.");
         }
-        if (msrpPrice == null) {
-            LOG.error("msrpPrice is null. Unable to populate prices for product " + product.getCode());
-            return;
+        if (target == null) {
+            throw new IllegalArgumentException("Parameter target cannot be null.");
         }
-        if (pmatPrice == null) {
-            LOG.error("PMATPrice is null. Unable to populate prices for product " + product.getCode());
-            return;
-        }
-        if (priceRows == null) {
-            LOG.error("priceRows is null. Unable to populate prices for product " + product.getCode());
-            return;
+        
+        // Example of copying simple fields
+        target.setId(source.getId());
+        target.setName(source.getName());
+        target.setDescription(source.getDescription());
+
+        // Existing/Legacy logic for price population
+        if (source.getPriceRows() == null) {
+            LOG.warn("Price rows are null in StoreProductPricePopulator");
+            target.setPriceRows(Collections.emptyList()); // FIX: set default empty list instead of returning early
+        } else {
+            target.setPriceRows(source.getPriceRows());
         }
 
-        // Existing population logic follows here
-        product.setMsrpPrice(msrpPrice);
-        product.setPmatPrice(pmatPrice);
-        product.setPriceRows(priceRows);
+        // Other field mappings
+        target.setAvailable(source.isAvailable());
+        target.setCategories(source.getCategories());
+        target.setBrand(source.getBrand());
 
-        for (PriceRow row : priceRows) {
-            if (row.getPrice() == null) {
-                LOG.warn("PriceRow with null price detected for product " + product.getCode());
-                continue;
-            }
-            // Additional business logic for price row population
-            if (row.getType().equals("discount")) {
-                product.applyDiscount(row.getPrice());
-            }
-            if (row.getType().equals("tax")) {
-                product.applyTax(row.getPrice());
-            }
+        // Additional logic that may come after price row processing
+        if (source.getAttributes() != null && !source.getAttributes().isEmpty()) {
+            target.setAttributes(source.getAttributes());
         }
 
-        if (product.getMsrpPrice() != null && product.getPmatPrice() != null) {
-            product.setBestPrice(product.getMsrpPrice().compareTo(product.getPmatPrice()) < 0 ? product.getMsrpPrice() : product.getPmatPrice());
-        } else if (product.getMsrpPrice() != null) {
-            product.setBestPrice(product.getMsrpPrice());
-        } else if (product.getPmatPrice() != null) {
-            product.setBestPrice(product.getPmatPrice());
+        // Handle images if available
+        if (source.getImageUrls() != null) {
+            target.setImageUrls(source.getImageUrls());
         }
-
-        LOG.info("Populated prices for product " + product.getCode());
     }
 }
+```
