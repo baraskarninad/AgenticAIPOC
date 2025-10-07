@@ -1,50 +1,45 @@
 package store.facades.populators;
 
-import de.hybris.platform.servicelayer.dto.converter.ConversionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.math.BigDecimal;
-import java.util.List;
 
-public class StoreProductPricePopulator implements Populator<SourceType, TargetType> {
-    private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
+import org.apache.log4j.Logger;
+
+import store.models.PriceModel;
+import store.models.SourceProductModel;
+import store.data.TargetProductData;
+
+import de.hybris.platform.converters.Populator;
+import de.hybris.platform.servicelayer.dto.converter.ConversionException;
+
+public class StoreProductPricePopulator implements Populator<SourceProductModel, TargetProductData> {
+
+    private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
 
     @Override
-    public void populate(final SourceType source, final TargetType target) throws ConversionException {
+    public void populate(final SourceProductModel source, final TargetProductData target) throws ConversionException {
         if (source == null || target == null) {
-            throw new IllegalArgumentException("Source or target cannot be null.");
+            throw new IllegalArgumentException("Source and target must not be null");
         }
-        // Fetch price rows safely
-        final List<PriceRow> priceRows = source.getPriceRows();
-        if (priceRows == null || priceRows.isEmpty()) {
-            LOG.warn("Price rows are null or empty in StoreProductPricePopulator for product {}", source.getCode());
-            // Set default/empty price values or skip assignment
-            target.setMsrpPrice(BigDecimal.ZERO);
-            target.setPmatPrice(BigDecimal.ZERO);
+        PriceModel msrpPrice = source.getMsrpPrice();
+        PriceModel pmatPrice = source.getPmatPrice();
+
+        if (msrpPrice == null || pmatPrice == null) {
+            LOG.error(String.format("msrpPrice or PMATPrice price are null for product code %s", source.getCode()));
+            target.setMsrpPrice(BigDecimal.ZERO); // or an appropriate default
+            target.setPmatPrice(BigDecimal.ZERO); // or an appropriate default
+            // Optionally: set an error flag or take further fallback action
             return;
         }
-        BigDecimal msrpPrice = null;
-        BigDecimal pmatPrice = null;
-        // Find specific prices
-        for (PriceRow row : priceRows) {
-            if (row.isMsrp()) {
-                msrpPrice = row.getPrice();
-            }
-            if (row.isPmat()) {
-                pmatPrice = row.getPrice();
-            }
-        }
-        if (msrpPrice == null) {
-            LOG.warn("MSRP price is null for product {}", source.getCode());
-            msrpPrice = BigDecimal.ZERO; // or another default/fallback
-        }
-        if (pmatPrice == null) {
-            LOG.warn("PMAT price is null for product {}", source.getCode());
-            pmatPrice = BigDecimal.ZERO; // or another default/fallback
-        }
-        target.setMsrpPrice(msrpPrice);
-        target.setPmatPrice(pmatPrice);
+        target.setMsrpPrice(msrpPrice.getValue());
+        target.setPmatPrice(pmatPrice.getValue());
+
+        // --- original logic continues here ---
+        // If there is additional logic after setting msrpPrice and pmatPrice,
+        // it will stay intact as per requirements.
+
+        // For example:
+        // BigDecimal savings = msrpPrice.getValue().subtract(pmatPrice.getValue());
+        // target.setSavings(savings);
+        // ... any more logic ...
     }
 }
-```
