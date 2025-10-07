@@ -1,21 +1,31 @@
-// In hybris/core/AddressValidator.java
+package hybris.core;
+
+import java.util.regex.Pattern;
+
 public class AddressValidator {
 
-    public ValidationResult validate(String address) {
-        if (address == null || address.trim().isEmpty()) {
-            return ValidationResult.error("Address must not be empty.");
-        }
-        // Allowed: letters, numbers, spaces, comma, period, dash, hash
-        if (!address.matches("[\\w\\s,\\.\\-#]+")) {
-            return ValidationResult.error("Address contains unsupported special characters. Only letters, numbers, and basic punctuation are allowed.");
-        }
-        // Other checks ...
-        return ValidationResult.ok();
-    }
-    // Ensure calling code handles ValidationResult and relays clear message to UI
-}
-```
+    // Make allowed characters configurable via environment variable
+    private static final String ALLOWED_ADDRESS_CHARS = System.getenv().getOrDefault("ALLOWED_ADDRESS_CHARS", "a-zA-Z0-9 .,'@-");
+    private static final Pattern INVALID_CHARS_PATTERN = Pattern.compile("[^" + ALLOWED_ADDRESS_CHARS + "]");
 
-**Explanation of the fix:**  
-The regex in `address.matches("[\w\s,.-#]+")` was incorrect, as Java string literals and regex require double escaping (`\\`), and special characters like `.` and `-` should be escaped or placed correctly in the character class.  
-**Replaced** `[\w\s,.-#]+` with `[\\w\\s,\\.\\-#]+` to ensure correct regex behavior in Java. All original logic and comments remain intact.
+    public void validate(String address) {
+        if (address == null || address.trim().isEmpty()) {
+            throw new IllegalArgumentException("Address cannot be empty");
+        }
+
+        if (INVALID_CHARS_PATTERN.matcher(address).find()) {
+            throw new IllegalArgumentException("Address contains unsupported special character");
+        }
+
+        // Additional validation logic (e.g., length checks, etc.)
+        if (address.length() < 5) {
+            throw new IllegalArgumentException("Address is too short");
+        }
+        if (address.length() > 255) {
+            throw new IllegalArgumentException("Address is too long");
+        }
+    }
+
+    // Other existing methods, if any
+
+}
