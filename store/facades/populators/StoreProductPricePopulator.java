@@ -1,45 +1,52 @@
 package store.facades.populators;
 
-import java.math.BigDecimal;
-
 import org.apache.log4j.Logger;
-
-import store.models.PriceModel;
-import store.models.SourceProductModel;
-import store.data.TargetProductData;
-
+import store.models.Price;
+import store.models.SourceType;
+import store.models.TargetType;
 import de.hybris.platform.converters.Populator;
 import de.hybris.platform.servicelayer.dto.converter.ConversionException;
 
-public class StoreProductPricePopulator implements Populator<SourceProductModel, TargetProductData> {
+public class StoreProductPricePopulator implements Populator<SourceType, TargetType> {
 
     private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
 
     @Override
-    public void populate(final SourceProductModel source, final TargetProductData target) throws ConversionException {
+    public void populate(final SourceType source, final TargetType target) throws ConversionException {
         if (source == null || target == null) {
             throw new IllegalArgumentException("Source and target must not be null");
         }
-        PriceModel msrpPrice = source.getMsrpPrice();
-        PriceModel pmatPrice = source.getPmatPrice();
-
-        if (msrpPrice == null || pmatPrice == null) {
-            LOG.error(String.format("msrpPrice or PMATPrice price are null for product code %s", source.getCode()));
-            target.setMsrpPrice(BigDecimal.ZERO); // or an appropriate default
-            target.setPmatPrice(BigDecimal.ZERO); // or an appropriate default
-            // Optionally: set an error flag or take further fallback action
+        if (source.getPriceRows() == null || source.getPriceRows().isEmpty()) {
+            LOG.error("Price rows are null or empty in StoreProductPricePopulator");
             return;
         }
+        Price msrpPrice = source.getMsrpPrice();
+        Price pmatPrice = source.getPMATPrice();
+        if (msrpPrice == null || pmatPrice == null) {
+            LOG.error("msrpPrice or PMATPrice price are null");
+            return;
+        }
+        // Existing population logic...
         target.setMsrpPrice(msrpPrice.getValue());
-        target.setPmatPrice(pmatPrice.getValue());
+        target.setMsrpCurrency(msrpPrice.getCurrency());
 
-        // --- original logic continues here ---
-        // If there is additional logic after setting msrpPrice and pmatPrice,
-        // it will stay intact as per requirements.
+        target.setPMATPrice(pmatPrice.getValue());
+        target.setPMATCurrency(pmatPrice.getCurrency());
 
-        // For example:
-        // BigDecimal savings = msrpPrice.getValue().subtract(pmatPrice.getValue());
-        // target.setSavings(savings);
-        // ... any more logic ...
+        target.setPriceRows(source.getPriceRows());
+
+        if (source.getDiscount() != null) {
+            target.setDiscount(source.getDiscount());
+        }
+
+        if (source.getPromotion() != null) {
+            target.setPromotion(source.getPromotion());
+        }
+
+        if (source.getSpecialPrice() != null) {
+            target.setSpecialPrice(source.getSpecialPrice());
+        }
+
+        // Other population logic as originally present
     }
 }
