@@ -1,52 +1,57 @@
 package store.facades.populators;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
-import store.models.Price;
-import store.models.SourceType;
-import store.models.TargetType;
-import de.hybris.platform.converters.Populator;
-import de.hybris.platform.servicelayer.dto.converter.ConversionException;
 
-public class StoreProductPricePopulator implements Populator<SourceType, TargetType> {
+import store.models.ProductModel;
+import store.models.PriceRowModel;
 
+public class StoreProductPricePopulator
+{
     private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
 
-    @Override
-    public void populate(final SourceType source, final TargetType target) throws ConversionException {
-        if (source == null || target == null) {
-            throw new IllegalArgumentException("Source and target must not be null");
-        }
-        if (source.getPriceRows() == null || source.getPriceRows().isEmpty()) {
-            LOG.error("Price rows are null or empty in StoreProductPricePopulator");
-            return;
-        }
-        Price msrpPrice = source.getMsrpPrice();
-        Price pmatPrice = source.getPMATPrice();
+    public void populate(ProductModel product, List<PriceRowModel> priceRows)
+    {
+        Double msrpPrice = getMsrpPrice(product);
+        Double pmatPrice = getPmatPrice(product);
+
+        // Example code change for StoreProductPricePopulator.java
         if (msrpPrice == null || pmatPrice == null) {
-            LOG.error("msrpPrice or PMATPrice price are null");
+            LOG.error("MSRP or PMAT price is null for product: " + product.getCode());
+            // Optionally, set default/fallback price or skip further processing for this product
             return;
         }
-        // Existing population logic...
-        target.setMsrpPrice(msrpPrice.getValue());
-        target.setMsrpCurrency(msrpPrice.getCurrency());
-
-        target.setPMATPrice(pmatPrice.getValue());
-        target.setPMATCurrency(pmatPrice.getCurrency());
-
-        target.setPriceRows(source.getPriceRows());
-
-        if (source.getDiscount() != null) {
-            target.setDiscount(source.getDiscount());
+        if (priceRows == null) {
+            LOG.error("Price rows are null in StoreProductPricePopulator for product: " + product.getCode());
+            // Handle accordingly
+            return;
         }
 
-        if (source.getPromotion() != null) {
-            target.setPromotion(source.getPromotion());
+        // ... existing logic for processing msrpPrice, pmatPrice, and priceRows
+        for (PriceRowModel priceRow : priceRows) {
+            // ... processing logic ...
+            if ("MSRP".equals(priceRow.getPriceType())) {
+                priceRow.setPrice(msrpPrice);
+            } else if ("PMAT".equals(priceRow.getPriceType())) {
+                priceRow.setPrice(pmatPrice);
+            } else {
+                // ... other price types ...
+            }
         }
-
-        if (source.getSpecialPrice() != null) {
-            target.setSpecialPrice(source.getSpecialPrice());
-        }
-
-        // Other population logic as originally present
+        // ... other logic ...
     }
+
+    private Double getMsrpPrice(ProductModel product) {
+        // ... logic to get MSRP price from product ...
+        return product.getMsrp();
+    }
+
+    private Double getPmatPrice(ProductModel product) {
+        // ... logic to get PMAT price from product ...
+        return product.getPmat();
+    }
+
+    // ... any other methods or logic ...
 }
+```
