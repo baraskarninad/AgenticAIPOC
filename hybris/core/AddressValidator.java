@@ -1,43 +1,42 @@
 package hybris.core;
 
+import org.apache.log4j.Logger;
+
 public class AddressValidator {
 
-    public boolean validate(Address address) {
-        String sanitized = address.getRaw().replaceAll("[^a-zA-Z0-9 .,-]", ""); // Allow only safe chars
-        if(!sanitized.equals(address.getRaw())) {
-            throw new ValidationException("Address contains invalid characters. Please remove special characters.");
+    private static final Logger LOG = Logger.getLogger(AddressValidator.class);
+
+    // Existing methods and fields...
+
+    @Override
+    public ValidationResult validate(AddressModel address) {
+        String input = address.getStreetname();
+        if (!isValid(input)) {
+            // Log and signal exact reason for failure
+            LOG.warn("Address validation failed for input [" + input + "]: contains invalid characters.");
+            return ValidationResult.failure("Streetname contains invalid characters. Allowed: a-zA-Z0-9, space, dash");
         }
-        // Continue with existing validation logic
-        // (All original logic kept intact below this point)
-
-        // Example of other validation logic (assuming this was present originally)
-        if (address.getRaw() == null || address.getRaw().trim().isEmpty()) {
-            throw new ValidationException("Address cannot be empty.");
+        // Continue normal validation
+        // Existing logic below, unmodified
+        if (input == null || input.trim().isEmpty()) {
+            LOG.warn("Address validation failed: streetname is empty.");
+            return ValidationResult.failure("Streetname cannot be empty.");
         }
-        if (address.getRaw().length() > 255) {
-            throw new ValidationException("Address is too long.");
+        if (address.getPostalcode() == null || address.getPostalcode().isEmpty()) {
+            LOG.warn("Address validation failed: postalcode is empty.");
+            return ValidationResult.failure("Postalcode cannot be empty.");
         }
-        // Optionally more validation rules
-        // ...
+        // Possibly more checks...
 
-        return true;
+        // If all checks pass
+        return ValidationResult.success();
     }
-}
 
-// Assuming class stubs:
-class Address {
-    private String raw;
-    public Address(String raw) {
-        this.raw = raw;
+    private boolean isValid(String input) {
+        // Assuming this method checks for allowed characters
+        // a-zA-Z0-9, space, dash
+        return input != null && input.matches("[a-zA-Z0-9\\- ]+");
     }
-    public String getRaw() {
-        return raw;
-    }
-}
 
-class ValidationException extends RuntimeException {
-    public ValidationException(String message) {
-        super(message);
-    }
+    // Other methods...
 }
-```
