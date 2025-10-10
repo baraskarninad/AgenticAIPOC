@@ -1,51 +1,14 @@
-package hybris.core;
-
+// hybris/core/AddressValidator.java
 public class AddressValidator {
+    private static final String ALLOWED_CHAR_PATTERN = "^[a-zA-Z0-9 \\-,.]+$"; // adjust as per locale
 
-    /**
-     * Validates a postal address string. Throws IllegalArgumentException if the address is invalid.
-     *
-     * @param address The address to validate.
-     */
-    public void validate(String address) {
-        if (address.contains("@")) {
-            throw new IllegalArgumentException("Address contains unsupported special character '@'");
-        }
+    private static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(AddressValidator.class);
 
-        if (address == null || address.trim().isEmpty()) {
-            throw new IllegalArgumentException("Address cannot be null or empty");
+    public boolean isValid(String addressField) {
+        if (addressField == null || !addressField.matches(ALLOWED_CHAR_PATTERN)) {
+            log.warn("Address validation failed due to invalid characters.");
+            return false;
         }
-
-        // Check for minimum length
-        if (address.length() < 5) {
-            throw new IllegalArgumentException("Address is too short");
-        }
-
-        // Ensure address does not have consecutive spaces
-        if (address.contains("  ")) {
-            throw new IllegalArgumentException("Address cannot contain consecutive spaces");
-        }
-
-        // Check for forbidden punctuation (other than . , - /)
-        for (char c : address.toCharArray()) {
-            if (!Character.isLetterOrDigit(c) && c != ' ' && c != '.' && c != ',' && c != '-' && c != '/') {
-                throw new IllegalArgumentException("Address contains invalid character: " + c);
-            }
-        }
-
-        // Example: verify address has at least one digit (for house number)
-        boolean hasDigit = false;
-        for (char c : address.toCharArray()) {
-            if (Character.isDigit(c)) {
-                hasDigit = true;
-                break;
-            }
-        }
-        if (!hasDigit) {
-            throw new IllegalArgumentException("Address must contain at least one digit (house number).");
-        }
-
-        // You may have more validation here, e.g. regex, country-specific rules, etc.
+        return true;
     }
 }
-```
