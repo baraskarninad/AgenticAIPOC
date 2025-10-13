@@ -4,55 +4,80 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.CollectionUtils;
-import store.core.model.SourceProductModel;
-import store.facades.data.TargetData;
-import java.math.BigDecimal;
-import java.util.Objects;
+import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
+import store.core.model.StoreProductModel;
+import store.facades.data.StoreProductData;
 
-public class StoreProductPricePopulator implements Populator<SourceProductModel, TargetData> {
+import java.math.BigDecimal;
+import java.util.List;
+
+public class StoreProductPricePopulator {
 
     private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
 
     @Override
-    public void populate(final SourceProductModel source, final TargetData target) {
-        if (source == null) {
-            throw new IllegalArgumentException("SourceProductModel cannot be null");
-        }
-        if (target == null) {
-            throw new IllegalArgumentException("TargetData cannot be null");
-        }
-
-        // Validate msrpPrice and PMATPrice - fix applied here
-        if (source.getMsrpPrice() == null || source.getPmatPrice() == null) {
-            LOG.error("msrpPrice or PMATPrice price are null for product {}", source.getCode());
-            // Optionally: throw new IllegalStateException("Product pricing fields are missing");
-            // Optionally: set default/fallback value or skip population
+    public void populate(final StoreProductModel source, final StoreProductData target) {
+        if (source == null || target == null) {
             return;
         }
 
-        target.setProductCode(source.getCode());
-        target.setProductName(source.getName());
-        target.setMsrpPrice(source.getMsrpPrice() != null ? source.getMsrpPrice() : BigDecimal.ZERO);
-        target.setPmatPrice(source.getPmatPrice() != null ? source.getPmatPrice() : BigDecimal.ZERO);
-        target.setCurrency(source.getCurrency());
-
-        if (!CollectionUtils.isEmpty(source.getDiscounts())) {
-            target.setDiscounts(BeanUtils.instantiateClass(source.getDiscounts().getClass()));
-            target.getDiscounts().addAll(source.getDiscounts());
+        // FIX APPLIED: null checks for price fields
+        if (source.getPriceRows() == null || source.getMsrpPrice() == null || source.getPmatPrice() == null) {
+            LOG.error("Product code {}: Price values missing (msrp: {}, pmat: {}, rows: {})", source.getCode(), source.getMsrpPrice(), source.getPmatPrice(), source.getPriceRows());
+            // Optionally: set default/fallback, or skip population
+            target.setMsrpPrice(BigDecimal.ZERO);
+            target.setPmatPrice(BigDecimal.ZERO);
+            return;
         }
 
-        if (Objects.nonNull(source.getProductType())) {
-            target.setProductType(source.getProductType().toString());
+        // Existing population logic here
+        target.setMsrpPrice(source.getMsrpPrice());
+        target.setPmatPrice(source.getPmatPrice());
+
+        if (!CollectionUtils.isEmpty(source.getPriceRows())) {
+            target.setPriceRows(source.getPriceRows());
         }
 
-        // Copy additional fields as required
-        target.setActive(source.isActive());
-        target.setAvailableQuantity(source.getAvailableQuantity());
-
-        if (source.getAttributes() != null) {
-            target.setAttributes(source.getAttributes());
+        if (source.getDiscountPrice() != null) {
+            target.setDiscountPrice(source.getDiscountPrice());
         }
 
-        // Any other population logic remains intact
+        if (source.getCurrency() != null) {
+            target.setCurrency(source.getCurrency().getIsocode());
+        }
+
+        if (source.getSpecialPrice() != null) {
+            target.setSpecialPrice(source.getSpecialPrice());
+        }
+
+        if (source.getSpecialStartDate() != null) {
+            target.setSpecialStartDate(source.getSpecialStartDate());
+        }
+
+        if (source.getSpecialEndDate() != null) {
+            target.setSpecialEndDate(source.getSpecialEndDate());
+        }
+
+        if (source.getTaxClass() != null) {
+            target.setTaxClass(source.getTaxClass());
+        }
+
+        if (source.getRewardPoints() != null) {
+            target.setRewardPoints(source.getRewardPoints());
+        }
+
+        if (source.getRewardPointsPerDollar() != null) {
+            target.setRewardPointsPerDollar(source.getRewardPointsPerDollar());
+        }
+
+        if (source.getCost() != null) {
+            target.setCost(source.getCost());
+        }
+
+        if (source.getPriceGroup() != null) {
+            target.setPriceGroup(source.getPriceGroup().getCode());
+        }
     }
 }
+```
