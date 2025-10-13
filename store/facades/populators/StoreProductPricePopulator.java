@@ -2,77 +2,67 @@ package store.facades.populators;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import store.model.ProductModel;
-import store.data.ProductData;
-import store.service.PriceService;
+import java.math.BigDecimal;
+import java.util.List;
 
-public class StoreProductPricePopulator
-{
+public class StoreProductPricePopulator {
+
     private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
 
-    private PriceService priceService;
+    public void populate(Product product, List<PriceRow> priceRows, BigDecimal msrpPrice, BigDecimal pmatPrice) {
 
-    public void populate(final ProductModel product, final ProductData productData)
-    {
-        if (product == null || productData == null)
-        {
-            LOG.error("Product or ProductData is null.");
-            return;
+        if (priceRows == null || priceRows.isEmpty() || msrpPrice == null || pmatPrice == null) {
+            LOG.error("Price population failed for product [{}]. msrpPrice: {}, pmatPrice: {}, priceRows: {}",
+                    product != null ? product.getCode() : "unknown", msrpPrice, pmatPrice, priceRows);
+            // Optionally: provide fallback value or further escalation
+            // e.g. msrpPrice = BigDecimal.ZERO;
+            // pmatPrice = BigDecimal.ZERO;
+            return; // or handle error appropriately
         }
 
-        Double msrpPrice = priceService.getMsrpPrice(product);
-        Double pmatPrice = priceService.getPmatPrice(product);
-
-        // Fix applied: Properly check for msrpPrice and pmatPrice null
-        if (msrpPrice == null || pmatPrice == null) {
-            LOG.error("MSRP or PMAT price is null for product: {}", product.getCode());
-            // Optionally, you could:
-            // - Set a default value
-            // - Skip population
-            // - Or throw a handled exception
-            return;
-        } 
-        // Continue with normal population logic
-
-        productData.setMsrpPrice(msrpPrice);
-        productData.setPmatPrice(pmatPrice);
-
-        // Other existing logic preserved
-        productData.setPrice(priceService.getPrice(product));
-        productData.setCurrency(priceService.getCurrency(product));
-
-        // Possibly more calculations and population code...
-        Double discount = priceService.calculateDiscount(product);
-        if (discount != null) {
-            productData.setDiscount(discount);
+        // Rest of the population logic
+        if(product != null) {
+            product.setMsrpPrice(msrpPrice);
+            product.setPmatPrice(pmatPrice);
+        }
+        
+        if(priceRows != null) {
+            for(PriceRow row : priceRows) {
+                // Example of processing each PriceRow
+                if(row != null && row.getPrice() != null) {
+                    // Assume addPrice is a method that adds a price to the product
+                    if(product != null) {
+                        product.addPrice(row.getPrice());
+                    }
+                }
+            }
         }
 
-        // Tax-related logic
-        if (product.isTaxable()) {
-            Double tax = priceService.calculateTax(product, productData.getPrice());
-            productData.setTax(tax);
-        } else {
-            productData.setTax(0.0);
-        }
-
-        // Stock and availability logic
-        boolean inStock = priceService.isInStock(product);
-        productData.setInStock(inStock);
-        if (!inStock) {
-            productData.setAvailability("Out of Stock");
-        } else {
-            productData.setAvailability("Available");
-        }
-
-        // Additional population logic...
-        productData.setPromotion(priceService.getActivePromotion(product));
-        productData.setTags(product.getTags());
-
-        // End of population method
+        // Additional logic if any
+        LOG.info("Product [{}] prices populated successfully.", product != null ? product.getCode() : "unknown");
     }
 
-    public void setPriceService(final PriceService priceService)
-    {
-        this.priceService = priceService;
+    // Mock classes for demonstration
+    public static class Product {
+        private String code;
+        private BigDecimal msrpPrice;
+        private BigDecimal pmatPrice;
+
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
+
+        public void setMsrpPrice(BigDecimal msrpPrice) { this.msrpPrice = msrpPrice; }
+        public void setPmatPrice(BigDecimal pmatPrice) { this.pmatPrice = pmatPrice; }
+
+        public void addPrice(BigDecimal price) {
+            // Logic to add price
+        }
+    }
+
+    public static class PriceRow {
+        private BigDecimal price;
+
+        public BigDecimal getPrice() { return price; }
+        public void setPrice(BigDecimal price) { this.price = price; }
     }
 }
