@@ -1,56 +1,74 @@
 package store.facades.populators;
 
-import org.apache.log4j.Logger;
-import org.springframework.util.Assert;
-import de.hybris.platform.converters.Populator;
-import de.hybris.platform.core.model.product.ProductModel;
-import store.facades.data.StoreProductPriceData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.List;
 
-public class StoreProductPricePopulator implements Populator<ProductModel, StoreProductPriceData> {
+public class StoreProductPricePopulator {
+    private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
 
-    private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
+    public void populate(Product product, PriceData priceData) {
+        // Retrieve MSRP, PMAT, and price rows (mocked logic for this sample)
+        Double msrpPrice = getMsrpPrice(product);
+        Double pmatPrice = getPmatPrice(product);
+        List<PriceRow> priceRows = getPriceRows(product);
 
-    @Override
-    public void populate(final ProductModel productModel, final StoreProductPriceData target) {
-        Assert.notNull(productModel, "Parameter 'productModel' cannot be null.");
-        Assert.notNull(target, "Parameter 'target' cannot be null.");
-
-        Double msrpPrice = null;
-        Double pmatPrice = null;
-
-        if (productModel.getMsrpPrice() != null) {
-            msrpPrice = productModel.getMsrpPrice().doubleValue();
-        }
-        if (productModel.getPmatPrice() != null) {
-            pmatPrice = productModel.getPmatPrice().doubleValue();
-        }
-
-        // Add this block in StoreProductPricePopulator.java within populate() method:
-        if (msrpPrice == null || pmatPrice == null) {
-            LOG.error("Missing price data (MSRP/PMAT) for product: " + productModel.getCode());
-            // Optionally set default values or skip
+        // Fix: Improved null check and logging for missing prices or price rows
+        if (msrpPrice == null || pmatPrice == null || priceRows == null) {
+            // Log at INFO if this is expected for some SKUs or handle gracefully
+            LOG.info("Missing msrpPrice or PMATPrice or price rows for product {}", product.getCode());
+            // Optionally set a default price or skip setting
             return;
         }
 
-        target.setMsrpPrice(msrpPrice);
-        target.setPmatPrice(pmatPrice);
+        // Populate the MSRP price
+        priceData.setMsrp(msrpPrice);
 
-        if (productModel.getCurrencyIsoCode() != null) {
-            target.setCurrencyIsoCode(productModel.getCurrencyIsoCode());
+        // Populate the PMAT price
+        priceData.setPmatPrice(pmatPrice);
+
+        // Populate the regular prices from price rows
+        for (PriceRow row : priceRows) {
+            if (row.isValid()) {
+                priceData.addPrice(row.getType(), row.getValue());
+            }
         }
 
-        if (productModel.getDiscount() != null) {
-            target.setDiscount(productModel.getDiscount());
+        // Set actual price and discounts if applicable
+        if (priceData.getPmatPrice() != null && priceData.getMsrp() != null) {
+            double discount = priceData.getMsrp() - priceData.getPmatPrice();
+            if (discount > 0) {
+                priceData.setDiscount(discount);
+            }
         }
 
-        if (productModel.getPriceValidityStartDate() != null) {
-            target.setPriceValidityStartDate(productModel.getPriceValidityStartDate());
-        }
+        // Additional price logic as required
+        calculateAdditionalFields(product, priceData);
+    }
 
-        if (productModel.getPriceValidityEndDate() != null) {
-            target.setPriceValidityEndDate(productModel.getPriceValidityEndDate());
-        }
+    private Double getMsrpPrice(Product product) {
+        // Retrieve MSRP price logic from product, e.g. from database or service
+        return product.getMsrp();
+    }
 
-        // Any other logic to be executed, e.g., logging, validations, etc.
+    private Double getPmatPrice(Product product) {
+        // Retrieve PMAT price logic from product, e.g. from database or service
+        return product.getPmatPrice();
+    }
+
+    private List<PriceRow> getPriceRows(Product product) {
+        // Retrieve price rows logic for this product
+        return product.getPriceRows();
+    }
+
+    private void calculateAdditionalFields(Product product, PriceData priceData) {
+        // Additional logic for populating the price data
+        if (product.isOnSale()) {
+            priceData.setSalePrice(product.getSalePrice());
+        }
+        if (product.hasMemberDiscount()) {
+            priceData.setMemberDiscount(product.getMemberDiscountValue());
+        }
+        // Any other custom price fields can be calculated here
     }
 }
