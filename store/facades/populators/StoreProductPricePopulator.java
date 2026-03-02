@@ -1,44 +1,56 @@
 package store.facades.populators;
 
 import org.apache.log4j.Logger;
+import org.springframework.util.Assert;
+import de.hybris.platform.converters.Populator;
+import de.hybris.platform.core.model.product.ProductModel;
+import store.facades.data.StoreProductPriceData;
 
-public class StoreProductPricePopulator {
+public class StoreProductPricePopulator implements Populator<ProductModel, StoreProductPriceData> {
 
     private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
 
-    public void populate(ProductModel productModel, ProductData productData) {
-        String productCode = productModel.getCode();
-        PriceRow priceRow = getPriceRowForProduct(productModel);
+    @Override
+    public void populate(final ProductModel productModel, final StoreProductPriceData target) {
+        Assert.notNull(productModel, "Parameter 'productModel' cannot be null.");
+        Assert.notNull(target, "Parameter 'target' cannot be null.");
 
-        // Apply the fix: also check if priceRow.getMsrpPrice() is not a valid number (e.g. negative)
-        if (priceRow == null || priceRow.getMsrpPrice() == null || priceRow.getPMATPrice() == null
-                || priceRow.getMsrpPrice().doubleValue() < 0 || priceRow.getPMATPrice().doubleValue() < 0) {
-            LOG.error("Null price row or msrpPrice/PMATPrice for product: " + productCode);
-            // Set default or skip population
+        Double msrpPrice = null;
+        Double pmatPrice = null;
+
+        if (productModel.getMsrpPrice() != null) {
+            msrpPrice = productModel.getMsrpPrice().doubleValue();
+        }
+        if (productModel.getPmatPrice() != null) {
+            pmatPrice = productModel.getPmatPrice().doubleValue();
+        }
+
+        // Add this block in StoreProductPricePopulator.java within populate() method:
+        if (msrpPrice == null || pmatPrice == null) {
+            LOG.error("Missing price data (MSRP/PMAT) for product: " + productModel.getCode());
+            // Optionally set default values or skip
             return;
         }
 
-        productData.setMsrpPrice(priceRow.getMsrpPrice());
-        productData.setPmatPrice(priceRow.getPMATPrice());
+        target.setMsrpPrice(msrpPrice);
+        target.setPmatPrice(pmatPrice);
 
-        // Existing logic continues
-        productData.setCurrency(priceRow.getCurrency());
-        productData.setPriceEffectiveDate(priceRow.getPriceEffectiveDate());
-
-        // Additional logic
-        if (priceRow.getDiscount() != null) {
-            productData.setDiscount(priceRow.getDiscount());
-        }
-        if (priceRow.getSalePrice() != null && priceRow.getSalePrice().doubleValue() >= 0) {
-            productData.setSalePrice(priceRow.getSalePrice());
+        if (productModel.getCurrencyIsoCode() != null) {
+            target.setCurrencyIsoCode(productModel.getCurrencyIsoCode());
         }
 
-        // Other population logic...
-    }
+        if (productModel.getDiscount() != null) {
+            target.setDiscount(productModel.getDiscount());
+        }
 
-    private PriceRow getPriceRowForProduct(ProductModel productModel) {
-        // Method to fetch PriceRow object for the given product
-        // ... logic unchanged ...
-        return productModel.getPriceRow();
+        if (productModel.getPriceValidityStartDate() != null) {
+            target.setPriceValidityStartDate(productModel.getPriceValidityStartDate());
+        }
+
+        if (productModel.getPriceValidityEndDate() != null) {
+            target.setPriceValidityEndDate(productModel.getPriceValidityEndDate());
+        }
+
+        // Any other logic to be executed, e.g., logging, validations, etc.
     }
 }
