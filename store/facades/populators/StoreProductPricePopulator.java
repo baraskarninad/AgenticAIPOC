@@ -1,68 +1,44 @@
 package store.facades.populators;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.math.BigDecimal;
-import java.util.List;
+import org.apache.log4j.Logger;
 
 public class StoreProductPricePopulator {
 
-    private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
+    private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
 
-    public void populate(Product product, List<PriceRow> priceRows, BigDecimal msrpPrice, BigDecimal pmatPrice) {
+    public void populate(ProductModel productModel, ProductData productData) {
+        String productCode = productModel.getCode();
+        PriceRow priceRow = getPriceRowForProduct(productModel);
 
-        if (priceRows == null || priceRows.isEmpty() || msrpPrice == null || pmatPrice == null) {
-            LOG.error("Price population failed for product [{}]. msrpPrice: {}, pmatPrice: {}, priceRows: {}",
-                    product != null ? product.getCode() : "unknown", msrpPrice, pmatPrice, priceRows);
-            // Optionally: provide fallback value or further escalation
-            // e.g. msrpPrice = BigDecimal.ZERO;
-            // pmatPrice = BigDecimal.ZERO;
-            return; // or handle error appropriately
+        // Apply the fix: also check if priceRow.getMsrpPrice() is not a valid number (e.g. negative)
+        if (priceRow == null || priceRow.getMsrpPrice() == null || priceRow.getPMATPrice() == null
+                || priceRow.getMsrpPrice().doubleValue() < 0 || priceRow.getPMATPrice().doubleValue() < 0) {
+            LOG.error("Null price row or msrpPrice/PMATPrice for product: " + productCode);
+            // Set default or skip population
+            return;
         }
 
-        // Rest of the population logic
-        if(product != null) {
-            product.setMsrpPrice(msrpPrice);
-            product.setPmatPrice(pmatPrice);
+        productData.setMsrpPrice(priceRow.getMsrpPrice());
+        productData.setPmatPrice(priceRow.getPMATPrice());
+
+        // Existing logic continues
+        productData.setCurrency(priceRow.getCurrency());
+        productData.setPriceEffectiveDate(priceRow.getPriceEffectiveDate());
+
+        // Additional logic
+        if (priceRow.getDiscount() != null) {
+            productData.setDiscount(priceRow.getDiscount());
         }
-        
-        if(priceRows != null) {
-            for(PriceRow row : priceRows) {
-                // Example of processing each PriceRow
-                if(row != null && row.getPrice() != null) {
-                    // Assume addPrice is a method that adds a price to the product
-                    if(product != null) {
-                        product.addPrice(row.getPrice());
-                    }
-                }
-            }
+        if (priceRow.getSalePrice() != null && priceRow.getSalePrice().doubleValue() >= 0) {
+            productData.setSalePrice(priceRow.getSalePrice());
         }
 
-        // Additional logic if any
-        LOG.info("Product [{}] prices populated successfully.", product != null ? product.getCode() : "unknown");
+        // Other population logic...
     }
 
-    // Mock classes for demonstration
-    public static class Product {
-        private String code;
-        private BigDecimal msrpPrice;
-        private BigDecimal pmatPrice;
-
-        public String getCode() { return code; }
-        public void setCode(String code) { this.code = code; }
-
-        public void setMsrpPrice(BigDecimal msrpPrice) { this.msrpPrice = msrpPrice; }
-        public void setPmatPrice(BigDecimal pmatPrice) { this.pmatPrice = pmatPrice; }
-
-        public void addPrice(BigDecimal price) {
-            // Logic to add price
-        }
-    }
-
-    public static class PriceRow {
-        private BigDecimal price;
-
-        public BigDecimal getPrice() { return price; }
-        public void setPrice(BigDecimal price) { this.price = price; }
+    private PriceRow getPriceRowForProduct(ProductModel productModel) {
+        // Method to fetch PriceRow object for the given product
+        // ... logic unchanged ...
+        return productModel.getPriceRow();
     }
 }
