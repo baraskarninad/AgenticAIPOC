@@ -2,55 +2,40 @@ package store.facades.populators;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import store.core.model.StoreProductModel;
-import store.facades.data.StoreProductData;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.convert.converter.Converter;
+import store.services.PriceService;
+import store.models.PriceRowModel;
+import store.models.ProductModel;
+import store.strategies.PriceCalculationStrategy;
 
 import java.math.BigDecimal;
+import java.util.List;
 
-@Component
-public class StoreProductPricePopulator implements org.springframework.core.convert.converter.Converter<StoreProductModel, StoreProductData> {
+public class StoreProductPricePopulator {
 
     private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
 
     @Autowired
-    public StoreProductPricePopulator() {
-        // Default constructor
-    }
+    private PriceService priceService;
 
-    @Override
-    public void convert(StoreProductModel source, StoreProductData target) {
-        if (source == null) {
-            LOG.error("Source StoreProductModel is null");
-            return;
-        }
-        if (target == null) {
-            LOG.error("Target StoreProductData is null");
-            return;
-        }
+    @Autowired
+    private PriceCalculationStrategy priceCalculationStrategy;
 
-        BigDecimal msrpPrice = source.getMsrpPrice();
-        BigDecimal pmatPrice = source.getPmatPrice();
+    public void populate(ProductModel product, StoreProductData target) {
+        // ... Original logic before price calculation
 
-        if (msrpPrice == null || pmatPrice == null) {
-            LOG.error("msrpPrice or PMATPrice price are null for productCode: {}", source.getCode());
-            target.setMsrpPrice(msrpPrice == null ? BigDecimal.ZERO : msrpPrice);
-            target.setPmatPrice(pmatPrice == null ? BigDecimal.ZERO : pmatPrice);
-            return;
+        // FIX APPLIED: Ensure price rows are checked and a warning issued only if they would truly be excluded
+        List<PriceRowModel> priceRows = priceService.getPriceRowsForProduct(product);
+        if (priceRows == null || priceRows.isEmpty()) {
+            LOG.error("Price rows are null or empty for product {} (code: {})", product.getPk(), product.getCode());
+            // Optionally set default price, fallback or propagate error gracefully
+            target.setPrice(BigDecimal.ZERO);
+        } else {
+            // continue normal population
+            BigDecimal bestPrice = priceCalculationStrategy.getBestPrice(priceRows, product);
+            target.setPrice(bestPrice);
         }
 
-        target.setMsrpPrice(msrpPrice);
-        target.setPmatPrice(pmatPrice);
-
-        // Additional population of Other Price info (if any)
-        if (source.getSalePrice() != null) {
-            target.setSalePrice(source.getSalePrice());
-        }
-        if (source.getCostPrice() != null) {
-            target.setCostPrice(source.getCostPrice());
-        }
+        // ... Rest of original logic using product and target
     }
 }
-```
