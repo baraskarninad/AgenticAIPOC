@@ -1,41 +1,55 @@
 package store.facades.populators;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import store.services.PriceService;
-import store.models.PriceRowModel;
-import store.models.ProductModel;
-import store.strategies.PriceCalculationStrategy;
-
-import java.math.BigDecimal;
-import java.util.List;
+import org.apache.log4j.Logger;
 
 public class StoreProductPricePopulator {
 
-    private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
+    private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
 
-    @Autowired
-    private PriceService priceService;
+    public void populate(ProductModel product, ProductData productData) {
+        String productCode = product.getCode();
+        Double msrpPrice = product.getMsrpPrice();
+        Double pmatPrice = product.getPmatPrice();
 
-    @Autowired
-    private PriceCalculationStrategy priceCalculationStrategy;
-
-    public void populate(ProductModel product, StoreProductData target) {
-        // ... Original logic before price calculation
-
-        // FIX APPLIED: Ensure price rows are checked and a warning issued only if they would truly be excluded
-        List<PriceRowModel> priceRows = priceService.getPriceRowsForProduct(product);
-        if (priceRows == null || priceRows.isEmpty()) {
-            LOG.error("Price rows are null or empty for product {} (code: {})", product.getPk(), product.getCode());
-            // Optionally set default price, fallback or propagate error gracefully
-            target.setPrice(BigDecimal.ZERO);
-        } else {
-            // continue normal population
-            BigDecimal bestPrice = priceCalculationStrategy.getBestPrice(priceRows, product);
-            target.setPrice(bestPrice);
+        if (msrpPrice == null || pmatPrice == null) {
+            LOG.error("MSRP or PMAT Price is missing for product: " + productCode);
+            // Optional: Provide fallback or skip this product
+            return; // or handle gracefully
         }
 
-        // ... Rest of original logic using product and target
+        // Existing logic to populate other prices, ensuring msrpPrice and pmatPrice are present
+        productData.setMsrpPrice(msrpPrice);
+        productData.setPmatPrice(pmatPrice);
+
+        // Any other product data population logic
+        Double specialPrice = product.getSpecialPrice();
+        if (specialPrice != null) {
+            productData.setSpecialPrice(specialPrice);
+        }
+
+        // ... other fields, as per original logic
     }
 }
+
+class ProductModel {
+    private String code;
+    private Double msrpPrice;
+    private Double pmatPrice;
+    private Double specialPrice;
+
+    public String getCode() { return code; }
+    public Double getMsrpPrice() { return msrpPrice; }
+    public Double getPmatPrice() { return pmatPrice; }
+    public Double getSpecialPrice() { return specialPrice; }
+}
+
+class ProductData {
+    private Double msrpPrice;
+    private Double pmatPrice;
+    private Double specialPrice;
+
+    public void setMsrpPrice(Double price) { this.msrpPrice = price; }
+    public void setPmatPrice(Double price) { this.pmatPrice = price; }
+    public void setSpecialPrice(Double price) { this.specialPrice = price; }
+}
+```
