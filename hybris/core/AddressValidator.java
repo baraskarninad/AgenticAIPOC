@@ -1,19 +1,28 @@
 // hybris/core/AddressValidator.java
-import java.text.Normalizer;
-
 public class AddressValidator {
-    public boolean isValidAddress(String address) {
-        // Normalize to remove diacritics and other special characters
-        String normalizedAddress = Normalizer.normalize(address, Normalizer.Form.NFD)
-                                             .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        // Only allow letters, numbers, space, comma, hyphen, dot, and apostrophe
-        String allowedPattern = "^[a-zA-Z0-9\\s,\\-\\.'#]+$";
-        if (!normalizedAddress.matches(allowedPattern)) {
-            // Optionally log or inform about invalid characters
-            return false; 
-        }
-        return true;
+
+    public boolean isAddressValid(String address) {
+        // Allow alphanumeric, spaces, dots, hyphens, comma
+        String sanitized = address.replaceAll("[^a-zA-Z0-9\\.\\-\\,\\s]", "");
+        // Only check for minimum/maximum length, further validation as per business rules
+        return sanitized.length() > 5 && sanitized.length() < 120;
     }
-    // Suggest adding logic to normalize (e.g. remove diacritics/emoji) as needed
+    
+    // Feedback to user should specify which characters are invalid and suggest correction.
+    public String getInvalidCharactersFeedback(String address) {
+        // Define regex of allowed characters
+        String allowedRegex = "[a-zA-Z0-9\\.\\-\\,\\s]";
+        StringBuilder invalidChars = new StringBuilder();
+        for (char c : address.toCharArray()) {
+            if (!String.valueOf(c).matches(allowedRegex) && invalidChars.indexOf(String.valueOf(c)) == -1) {
+                invalidChars.append(c);
+            }
+        }
+        if (invalidChars.length() == 0) {
+            return "All characters in your address are valid.";
+        } else {
+            return "The address contains invalid characters: '" + invalidChars.toString() +
+                   "'. Please remove these characters and use only letters, numbers, spaces, dots (.), hyphens (-), or commas (,).";
+        }
+    }
 }
-```
