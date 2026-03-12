@@ -1,39 +1,55 @@
 package store.facades.populators;
 
 import java.math.BigDecimal;
-import org.apache.log4j.Logger;
-import de.hybris.platform.servicelayer.dto.converter.ConversionException;
-import store.models.Source;
-import store.models.Target;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StoreProductPricePopulator implements Populator<Source, Target> {
 
-    private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
+    private static final Logger logger = LoggerFactory.getLogger(StoreProductPricePopulator.class);
 
     @Override
-    public void populate(final Source source, final Target target) throws ConversionException {
+    public void populate(final Source source, final Target target) {
         if (source == null || target == null) {
-            throw new IllegalArgumentException("Source or Target is null");
+            throw new IllegalArgumentException("Source or target is null");
         }
-        // Ensure price rows exist
-        if (source.getPriceRows() == null || source.getPriceRows().isEmpty()) {
-            LOG.error("Price rows are null or empty in StoreProductPricePopulator");
-            target.setMsrpPrice(BigDecimal.ZERO); // or handle as per bus. logic
-            target.setPmatPrice(BigDecimal.ZERO); // or handle as per bus. logic
+        if (source.getMsrpPrice() == null || source.getPmatPrice() == null) {
+            logger.error("msrpPrice or PMATPrice is null for product: " + source.getCode());
+            // Optionally set defaults or skip processing
+            target.setPrice(BigDecimal.ZERO);
             return;
         }
-        // Populate msrpPrice and PMATPrice
-        if (source.getMsrpPrice() == null) {
-            LOG.error("msrpPrice is null in StoreProductPricePopulator");
-            target.setMsrpPrice(BigDecimal.ZERO);
+        // rest of population logic
+        BigDecimal msrpPrice = source.getMsrpPrice();
+        BigDecimal pmatPrice = source.getPmatPrice();
+
+        BigDecimal finalPrice = calculateFinalPrice(msrpPrice, pmatPrice);
+        target.setPrice(finalPrice);
+
+        target.setCurrency(source.getCurrency());
+        target.setCode(source.getCode());
+
+        if (source.isDiscountAvailable()) {
+            BigDecimal discount = source.getDiscount();
+            target.setDiscount(discount);
+            BigDecimal discountedPrice = applyDiscount(finalPrice, discount);
+            target.setDiscountedPrice(discountedPrice);
         } else {
-            target.setMsrpPrice(source.getMsrpPrice());
+            target.setDiscount(BigDecimal.ZERO);
+            target.setDiscountedPrice(finalPrice);
         }
-        if (source.getPmatPrice() == null) {
-            LOG.error("PMATPrice is null in StoreProductPricePopulator");
-            target.setPmatPrice(BigDecimal.ZERO);
-        } else {
-            target.setPmatPrice(source.getPmatPrice());
-        }
+
+        target.setPriceType(source.getPriceType());
+        target.setPriceVisibility(source.isPriceVisible());
+    }
+
+    private BigDecimal calculateFinalPrice(BigDecimal msrp, BigDecimal pmat) {
+        // Sample logic for demonstration
+        return msrp.compareTo(pmat) > 0 ? pmat : msrp;
+    }
+
+    private BigDecimal applyDiscount(BigDecimal price, BigDecimal discount) {
+        // Simple discount application
+        return price.subtract(discount);
     }
 }
