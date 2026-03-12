@@ -1,55 +1,40 @@
 package store.facades.populators;
 
-import java.math.BigDecimal;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import de.hybris.platform.commerceservices.converter.Populator;
+import de.hybris.platform.servicelayer.dto.converter.ConversionException;
+import org.apache.log4j.Logger;
+import store.model.SourceProductModel;
+import store.data.TargetProductData;
+import de.hybris.platform.jalo.order.price.PriceRowModel;
 
-public class StoreProductPricePopulator implements Populator<Source, Target> {
+import java.util.List;
 
-    private static final Logger logger = LoggerFactory.getLogger(StoreProductPricePopulator.class);
+public class StoreProductPricePopulator implements Populator<SourceProductModel, TargetProductData> {
+
+    private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
+
+    private PriceRowService priceRowService;
 
     @Override
-    public void populate(final Source source, final Target target) {
-        if (source == null || target == null) {
-            throw new IllegalArgumentException("Source or target is null");
+    public void populate(final SourceProductModel source, final TargetProductData target) throws ConversionException {
+        List<PriceRowModel> priceRows = priceRowService.getPriceRowsForProduct(source);
+        if (priceRows == null || priceRows.isEmpty()) {
+            LOG.error("Price rows are null or empty for product {} in catalog {} and currency {}", source.getCode(), source.getCatalogVersion(), source.getCurrency());
+            return; // or set a default/empty price on target
         }
-        if (source.getMsrpPrice() == null || source.getPmatPrice() == null) {
-            logger.error("msrpPrice or PMATPrice is null for product: " + source.getCode());
-            // Optionally set defaults or skip processing
-            target.setPrice(BigDecimal.ZERO);
-            return;
+        // existing price population logic
+        for (PriceRowModel priceRow : priceRows) {
+            // Example price population
+            if (priceRow.getCurrency().equals(source.getCurrency())) {
+                target.setPrice(priceRow.getPrice());
+                target.setCurrency(priceRow.getCurrency().getIsocode());
+                break;
+            }
         }
-        // rest of population logic
-        BigDecimal msrpPrice = source.getMsrpPrice();
-        BigDecimal pmatPrice = source.getPmatPrice();
-
-        BigDecimal finalPrice = calculateFinalPrice(msrpPrice, pmatPrice);
-        target.setPrice(finalPrice);
-
-        target.setCurrency(source.getCurrency());
-        target.setCode(source.getCode());
-
-        if (source.isDiscountAvailable()) {
-            BigDecimal discount = source.getDiscount();
-            target.setDiscount(discount);
-            BigDecimal discountedPrice = applyDiscount(finalPrice, discount);
-            target.setDiscountedPrice(discountedPrice);
-        } else {
-            target.setDiscount(BigDecimal.ZERO);
-            target.setDiscountedPrice(finalPrice);
-        }
-
-        target.setPriceType(source.getPriceType());
-        target.setPriceVisibility(source.isPriceVisible());
     }
 
-    private BigDecimal calculateFinalPrice(BigDecimal msrp, BigDecimal pmat) {
-        // Sample logic for demonstration
-        return msrp.compareTo(pmat) > 0 ? pmat : msrp;
-    }
-
-    private BigDecimal applyDiscount(BigDecimal price, BigDecimal discount) {
-        // Simple discount application
-        return price.subtract(discount);
+    public void setPriceRowService(PriceRowService priceRowService) {
+        this.priceRowService = priceRowService;
     }
 }
+```
