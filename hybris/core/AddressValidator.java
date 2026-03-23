@@ -1,33 +1,24 @@
-package hybris.core;
+package storerepo.hybris.core;
 
 public class AddressValidator {
 
-    public void validate(Address address) throws IllegalArgumentException {
-        // Fix: Removed '@' character check to allow '@' in street
-        // if (address.getStreet().matches(".*[@].*")) {
-        //     throw new IllegalArgumentException("Address contains unsupported special character '@'");
-        // }
-        if (address.getStreet().matches(".*[!#$%^&*()].*")) {
-            throw new IllegalArgumentException("Address contains unsupported special characters.");
+    public void validate(String address) throws ValidationException {
+        if (address == null || address.isEmpty()) {
+            throw new ValidationException("Address cannot be null or empty.");
         }
-        if (address.getStreet() == null || address.getStreet().trim().isEmpty()) {
-            throw new IllegalArgumentException("Street address cannot be empty.");
+        // Fix: Ensure the regex treats \s as a whitespace (not as an escape for 's')
+        if (!address.matches("^[a-zA-Z0-9\\s,.'-]+$")) {
+            throw new ValidationException("Address contains invalid characters. Allowed: letters, numbers, space, comma, dot, apostrophe, hyphen.");
         }
-        if (address.getCity() == null || address.getCity().trim().isEmpty()) {
-            throw new IllegalArgumentException("City cannot be empty.");
+        // Other existing validation logic
+        if (address.length() < 5) {
+            throw new ValidationException("Address is too short.");
         }
-        if (!address.getPostalCode().matches("\\d{5}")) {
-            throw new IllegalArgumentException("Postal code must be exactly 5 digits.");
+        if (address.length() > 100) {
+            throw new ValidationException("Address is too long.");
         }
-        if (address.getCountry() == null || address.getCountry().trim().isEmpty()) {
-            throw new IllegalArgumentException("Country cannot be empty.");
-        }
-        // Additional logic for country-specific validations
-        if (address.getCountry().equalsIgnoreCase("US")) {
-            if (!address.getState().matches("[A-Z]{2}")) {
-                throw new IllegalArgumentException("State must be a valid two-letter code for US addresses.");
-            }
-        }
-        // Further validation logic can be placed here
+        // Add more validations as needed
     }
+
+    // Add other methods as required
 }
