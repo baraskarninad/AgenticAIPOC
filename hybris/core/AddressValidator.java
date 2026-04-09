@@ -1,25 +1,16 @@
-package hybris.core;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
+// Add character whitelist or improved error message in AddressValidator
 public class AddressValidator {
-
-    // Removed '@' from the unsupported characters set to permit it if business requirements allow it.
-    private static final Set<Character> UNSUPPORTED_CHARACTERS = new HashSet<>(Arrays.asList(
-        '#', '$', '%', '&', '*', '!', '~', '`', '^', '(', ')', '+', '=', '{', '}', '[', ']', '|', '\\', ':', ';', '"', '\'', '<', '>', ',', '?', '/'
-        // '@' was removed from this list
-    ));
-
+    private static final String INVALID_CHARS = "@";
     public void validate(String address) {
-        for (char c : address.toCharArray()) {
-            if (UNSUPPORTED_CHARACTERS.contains(c)) {
-                throw new IllegalArgumentException("Address contains unsupported special character '" + c + "'");
+        for (char c : INVALID_CHARS.toCharArray()) {
+            if (address.contains(String.valueOf(c))) {
+                throw new IllegalArgumentException("Address contains unsupported special character '" + c + "'. Please remove it and try again.");
             }
         }
+        // ... (other validations)
     }
-
-    // You may have other members or methods
+    // Optionally, add a helper to sanitize:
+    public String sanitize(String input) {
+        return input.replaceAll("[" + INVALID_CHARS + "]", "");
+    }
 }
-```
