@@ -1,70 +1,29 @@
-package hybris.core;
-
+// hybris/core/AddressValidator.java
 public class AddressValidator {
 
-    public ValidationResult validateShippingAddress(AddressData address) {
-        // Start of added validations for all required fields
-        
-        if (address.getPostcode() == null || !isValidPostcode(address.getPostcode())) {
-            return ValidationResult.fail("Invalid or missing postcode.");
+    public ValidationResult validate(AddressData address) {
+        if (address == null) {
+            return ValidationResult.error("Address is missing. Please enter all required fields.");
         }
-        if (address.getCity() == null || address.getCity().trim().isEmpty()) {
-            return ValidationResult.fail("City is required.");
+
+        // Existing field length checks, etc.
+        if (address.getStreet() != null && address.getStreet().length() > 100) {
+            return ValidationResult.error("Street name is too long.");
         }
-        if (address.getMobile() == null || !isValidMobile(address.getMobile())) {
-            return ValidationResult.fail("Invalid mobile number.");
+
+        if (address.getCity() != null && address.getCity().length() > 50) {
+            return ValidationResult.error("City name is too long.");
         }
-        if (address.getStreet() == null || address.getStreet().trim().isEmpty()) {
-            return ValidationResult.fail("Street is required.");
+
+        if (address.getPostalCode() != null && address.getPostalCode().length() > 10) {
+            return ValidationResult.error("Postal code is too long.");
         }
-        if (address.getCountry() == null || address.getCountry().trim().isEmpty()) {
-            return ValidationResult.fail("Country is required.");
+
+        // At end, check for all required fields
+        if (address.getPostalCode() == null || address.getCountry() == null || address.getPhone() == null) {
+            return ValidationResult.error("Required address fields are missing.");
         }
-        if (address.getFirstName() == null || address.getFirstName().trim().isEmpty()) {
-            return ValidationResult.fail("First name is required.");
-        }
-        if (address.getLastName() == null || address.getLastName().trim().isEmpty()) {
-            return ValidationResult.fail("Last name is required.");
-        }
-        if (address.getEmail() == null || !isValidEmail(address.getEmail())) {
-            return ValidationResult.fail("Invalid or missing email address.");
-        }
-        if (address.getRegion() == null || address.getRegion().trim().isEmpty()) {
-            return ValidationResult.fail("Region is required.");
-        }
-        // Add additional fields here if necessary
-        
-        // End of added validations for all required fields
-        
-        // Existing logic starts here (keep all original validation logic, do not remove or abstract)
-        // For example, if you have extra business logic, keep it:
-        if (!customBusinessRulesValidation(address)) {
-            return ValidationResult.fail("Custom business rule validation failed.");
-        }
-        // End of existing logic
-        
+
         return ValidationResult.success();
     }
-
-    private boolean isValidPostcode(String postcode) {
-        // Simplified postcode validation
-        return postcode.matches("\\d{5}") || postcode.matches("[A-Z0-9\\- ]{3,10}");
-    }
-
-    private boolean isValidMobile(String mobile) {
-        // Basic mobile validation: optional +, 8-15 digits
-        return mobile.matches("^\\+?\\d{8,15}$");
-    }
-
-    private boolean isValidEmail(String email) {
-        // Basic email validation
-        return email.matches("^[\\w-\\.]+@[\\w-\\.]+\\.[A-Za-z]{2,6}$");
-    }
-
-    private boolean customBusinessRulesValidation(AddressData address) {
-        // Placeholder for any additional validation logic
-        return true;
-    }
-
 }
-```
