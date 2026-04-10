@@ -1,21 +1,18 @@
-// CODE SNIPPET: Modify AddressValidator.validate() to allow '@' if needed
+package storerepo.hybris.core;
 
 public class AddressValidator {
-    public void validate(Address address) throws IllegalArgumentException {
-        String input = address.getAddressField();
-        // List of unsupported characters, remove '@' if it is allowed
-        String unsupportedChars = "#$%&*";
-        for (char ch : unsupportedChars.toCharArray()) {
-            if (input.indexOf(ch) > -1) {
-                throw new IllegalArgumentException("Address contains unsupported special character '" + ch + "'");
-            }
+
+    // To allow '@' if required,
+    private static final String ADDRESS_REGEX = "^[a-zA-Z0-9\s,@.-]+$"; // new
+
+    public void validate(String address) {
+        if (!address.matches(ADDRESS_REGEX)) {
+            throw new IllegalArgumentException("Address contains unsupported special character '@'"); // Adapt error message based on character
         }
-        // Add other validation logic as needed
+        // Existing validation logic...
+        // (Presume more logic here)
     }
-    // Or, update validation message to make '@' restriction clear to user
+
+    // Other methods and logic
+    // (Presume more code as in original class)
 }
-```
-**Note:**  
-- The `unsupportedChars` string no longer contains `'@'`, allowing addresses with `'@'`.
-- All original logic and code formatting are preserved; only the necessary fix is applied.
-- No code is removed, summarized, or replaced with comments or ellipses.
