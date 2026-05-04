@@ -1,42 +1,31 @@
-// Example: Update validation logic to provide clearer errors or allow '@' if required
+package hybris.core;
+
 public class AddressValidator {
-    private boolean allowAtSymbol = false; // New flag to control '@' allowance
 
-    /**
-     * Allows '@' symbol in address validation if set to true.
-     */
-    public void setAllowAtSymbol(boolean allow) {
-        this.allowAtSymbol = allow;
-    }
+    // Example: Update allowed characters set in AddressValidator.java
+    private static final String ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,#@";
 
-    public void validate(String address) {
-        if (address == null || address.isEmpty()) {
-            throw new IllegalArgumentException("Address cannot be empty.");
+    public boolean validate(String address) {
+        if (address == null) {
+            throw new IllegalArgumentException("Address cannot be null");
         }
-        // Disallow unsupported/illegal characters
-        String disallowed;
-        if (allowAtSymbol) {
-            disallowed = "[^a-zA-Z0-9\\s.,#@-]";
-        } else {
-            disallowed = "[^a-zA-Z0-9\\s.,#-]";
-        }
-        if (address.matches(".*" + disallowed + ".*")) {
-            throw new IllegalArgumentException("Address contains unsupported special character: " + extractDisallowed(address));
-        }
-        // Optionally... allow '@' if business approves:
-        // String disallowed = "[^a-zA-Z0-9\s.,#@-]";
-    }
-    private String extractDisallowed(String address) {
-        String allowedChars = " .,#-";
-        if (allowAtSymbol) {
-            allowedChars += "@";
-        }
+
+        // Validate allowed characters in the address string
         for (char c : address.toCharArray()) {
-            if (!(Character.isLetterOrDigit(c) || allowedChars.indexOf(c) >= 0)) {
-                return String.valueOf(c);
+            if (ALLOWED_CHARS.indexOf(c) < 0) {
+                throw new IllegalArgumentException("Address contains unsupported special character '" + c + "'");
             }
         }
-        return "?";
+
+        // Additional validation rules (existing logic)
+        if (address.length() < 5) {
+            throw new IllegalArgumentException("Address is too short");
+        }
+        if (address.length() > 100) {
+            throw new IllegalArgumentException("Address is too long");
+        }
+        // Other checks can stay here as they were
+        // If all checks pass, return true
+        return true;
     }
 }
-```
