@@ -1,18 +1,42 @@
-package storerepo.hybris.core;
-
+// Example: Update validation logic to provide clearer errors or allow '@' if required
 public class AddressValidator {
+    private boolean allowAtSymbol = false; // New flag to control '@' allowance
 
-    // To allow '@' if required,
-    private static final String ADDRESS_REGEX = "^[a-zA-Z0-9\s,@.-]+$"; // new
-
-    public void validate(String address) {
-        if (!address.matches(ADDRESS_REGEX)) {
-            throw new IllegalArgumentException("Address contains unsupported special character '@'"); // Adapt error message based on character
-        }
-        // Existing validation logic...
-        // (Presume more logic here)
+    /**
+     * Allows '@' symbol in address validation if set to true.
+     */
+    public void setAllowAtSymbol(boolean allow) {
+        this.allowAtSymbol = allow;
     }
 
-    // Other methods and logic
-    // (Presume more code as in original class)
+    public void validate(String address) {
+        if (address == null || address.isEmpty()) {
+            throw new IllegalArgumentException("Address cannot be empty.");
+        }
+        // Disallow unsupported/illegal characters
+        String disallowed;
+        if (allowAtSymbol) {
+            disallowed = "[^a-zA-Z0-9\\s.,#@-]";
+        } else {
+            disallowed = "[^a-zA-Z0-9\\s.,#-]";
+        }
+        if (address.matches(".*" + disallowed + ".*")) {
+            throw new IllegalArgumentException("Address contains unsupported special character: " + extractDisallowed(address));
+        }
+        // Optionally... allow '@' if business approves:
+        // String disallowed = "[^a-zA-Z0-9\s.,#@-]";
+    }
+    private String extractDisallowed(String address) {
+        String allowedChars = " .,#-";
+        if (allowAtSymbol) {
+            allowedChars += "@";
+        }
+        for (char c : address.toCharArray()) {
+            if (!(Character.isLetterOrDigit(c) || allowedChars.indexOf(c) >= 0)) {
+                return String.valueOf(c);
+            }
+        }
+        return "?";
+    }
 }
+```
