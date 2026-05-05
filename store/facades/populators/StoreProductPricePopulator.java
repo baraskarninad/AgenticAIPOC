@@ -1,58 +1,77 @@
 package store.facades.populators;
 
-import org.apache.log4j.Logger;
 import java.math.BigDecimal;
 import java.util.List;
 
-public class StoreProductPricePopulator
-{
+import org.apache.log4j.Logger;
+
+public class StoreProductPricePopulator {
+
     private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
 
-    // ... other class members ...
+    public void populatePrices(List<PriceRow> priceRows) {
+        BigDecimal msrpPrice = null;
+        BigDecimal pmatPrice = null;
 
-    public void populate(final ProductModel source, final ProductData target) {
-        if (source == null || target == null) {
-            return;
-        }
-        BigDecimal msrpPrice = getMsrpPrice(source);
-        BigDecimal pmatPrice = getPmatPrice(source);
-        if (msrpPrice == null || pmatPrice == null) {
-            LOG.error("msrpPrice or PMATPrice price are null (product: " + source.getCode() + ")");
-            // Optionally set to a default value or skip population
-            target.setMsrpPrice(BigDecimal.ZERO); // fallback
-            target.setPmatPrice(BigDecimal.ZERO); // fallback
-            return;
-        }
-        // continue population as normal
-        target.setMsrpPrice(msrpPrice);
-        target.setPmatPrice(pmatPrice);
-        // verify price rows
-        List<PriceRowModel> priceRows = getPriceRows(source);
+        // In StoreProductPricePopulator.java
         if (priceRows == null || priceRows.isEmpty()) {
-            LOG.error("Price rows are null or empty for product: " + source.getCode());
-            // handle gracefully
-        } else {
-            // normal population logic
+            LOG.error("Price rows are null or empty, cannot populate msrpPrice or PMATPrice.");
+            msrpPrice = BigDecimal.ZERO;
+            pmatPrice = BigDecimal.ZERO;
+            // Optionally return or throw ApplicationException
+            return;
         }
-        // ... preserve existing logic here if any comes after ...
+
+        // Original logic for extracting msrpPrice and pmatPrice from priceRows
+        for (PriceRow row : priceRows) {
+            if("MSRP".equals(row.getType())) {
+                msrpPrice = row.getPrice();
+            }
+            if("PMAT".equals(row.getType())) {
+                pmatPrice = row.getPrice();
+            }
+        }
+
+        // Defensive null handling for msrp/PMAT
+        if (msrpPrice == null) {
+            LOG.warn("msrpPrice attribute is null, setting default value.");
+            msrpPrice = BigDecimal.ZERO;
+        }
+        if (pmatPrice == null) {
+            LOG.warn("PMATPrice attribute is null, setting default value.");
+            pmatPrice = BigDecimal.ZERO;
+        }
+
+        // Continue setting these on target object or wherever needed
+        setMsrpPrice(msrpPrice);
+        setPmatPrice(pmatPrice);
     }
 
-    // ... other methods, getters/setters, etc. ...
-
-    protected BigDecimal getMsrpPrice(final ProductModel source) {
-        // ... original implementation ...
-        return null;
+    // Placeholder setters
+    private void setMsrpPrice(BigDecimal msrpPrice) {
+        // Implementation to set msrpPrice
     }
 
-    protected BigDecimal getPmatPrice(final ProductModel source) {
-        // ... original implementation ...
-        return null;
+    private void setPmatPrice(BigDecimal pmatPrice) {
+        // Implementation to set pmatPrice
     }
 
-    protected List<PriceRowModel> getPriceRows(final ProductModel source) {
-        // ... original implementation ...
-        return null;
-    }
+    // Placeholder class for PriceRow
+    public static class PriceRow {
+        private String type;
+        private BigDecimal price;
 
-    // ... Any other class members ...
+        public PriceRow(String type, BigDecimal price) {
+            this.type = type;
+            this.price = price;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public BigDecimal getPrice() {
+            return price;
+        }
+    }
 }
