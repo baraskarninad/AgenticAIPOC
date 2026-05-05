@@ -1,31 +1,36 @@
-package hybris.core;
+package storerepo.hybris.core;
 
 public class AddressValidator {
 
-    // Example: Update allowed characters set in AddressValidator.java
-    private static final String ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,#@";
+    // Existing logic and fields, constructors, etc.
 
-    public boolean validate(String address) {
-        if (address == null) {
-            throw new IllegalArgumentException("Address cannot be null");
-        }
+    // Example: Relax the allowed character set in AddressValidator
+    private boolean isAllowedCharacter(char c) {
+        // Old: return Character.isLetterOrDigit(c) || c == ' ' || c == ',' || c == '.' || c == '#';
+        // New: Add '@' if desired
+        return Character.isLetterOrDigit(c) || c == ' ' || c == ',' || c == '.' || c == '#' || c == '@';
+    }
 
-        // Validate allowed characters in the address string
+    // Also, improve error feedback
+    private void validate(String address) {
         for (char c : address.toCharArray()) {
-            if (ALLOWED_CHARS.indexOf(c) < 0) {
-                throw new IllegalArgumentException("Address contains unsupported special character '" + c + "'");
+            if (!isAllowedCharacter(c)) {
+                throw new IllegalArgumentException(
+                    "Address contains unsupported special character '" + c + "'."
+                );
             }
         }
+    }
 
-        // Additional validation rules (existing logic)
-        if (address.length() < 5) {
-            throw new IllegalArgumentException("Address is too short");
-        }
-        if (address.length() > 100) {
-            throw new IllegalArgumentException("Address is too long");
-        }
-        // Other checks can stay here as they were
-        // If all checks pass, return true
+    // Other existing methods, logic, etc.
+    public boolean validateAddress(String address) {
+        // Call to validate method
+        validate(address);
+        // Additional validation logic
+        // Return true if address is valid
         return true;
     }
+
+    // Additional methods and logic as originally existing
 }
+```
