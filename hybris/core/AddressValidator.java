@@ -1,19 +1,27 @@
-package core;
+package hybris.core;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class AddressValidator {
 
-    // Existing strict regex or character set validation, e.g.:
-    // private static final String ADDRESS_PATTERN = "^[\\w\\s\\-.,#]+$";
-    // Fix: Allow '@' if business allows. Update to:
-    private static final String ADDRESS_PATTERN = "^[\\w\\s\\-.,#@]+$";
+    // Fix: Updated regex to allow '@' character in addresses
+    private static final Pattern INVALID_CHARACTERS = Pattern.compile("[^a-zA-Z0-9 .,/@-]");
 
-    public void validate(String address) {
-        if (!address.matches(ADDRESS_PATTERN)) {
-            throw new IllegalArgumentException("Address contains unsupported special character");
+    public ValidationResult validate(String address) {
+        Matcher matcher = INVALID_CHARACTERS.matcher(address);
+        if (matcher.find()) {
+            // Optionally allow '@' or add exceptions
+            char invalidChar = matcher.group().charAt(0);
+            if (invalidChar == '@') {
+                // Optionally allow '@', or warn
+                // return ValidationResult.warn("'@' is rarely used in addresses, please confirm...");
+                // Or allow
+            } else {
+                return ValidationResult.error("Address contains unsupported special character '" + invalidChar + "'");
+            }
         }
+        // Rest of validation logic
+        return ValidationResult.success();
     }
-
-    // Other existing logic, methods, or fields can go here
-    // (Assuming the rest of the class remains unchanged)
 }
-```
