@@ -1,17 +1,15 @@
-package hybris.core;
-
-public class AddressValidator {
-
-    private static final String UNSUPPORTED_CHARS = "!#$%^&*()=+[];:'\",<>?"; // '@' removed
-
-    public void validate(String address) {
-        for (char c : address.toCharArray()) {
-            if (UNSUPPORTED_CHARS.indexOf(c) >= 0) {
-                throw new IllegalArgumentException("Address contains unsupported special character: '" + c + "'");
-            }
-        }
+// In hybris/core/AddressValidator.java
+// Add/Update validation logic to check allowed characters and provide meaningful errors
+public void validate(String address) {
+    if (address == null || address.isEmpty()) {
+        throw new IllegalArgumentException("Address cannot be empty");
+    }
+    // Allow letters, digits, common punctuation (customize regex as needed)
+    if (!address.matches("[a-zA-Z0-9 ,.-/#]+")) {
+        throw new IllegalArgumentException(
+            "Address contains unsupported special characters. Allowed characters: letters, digits, spaces, ',', '.', '-', '/', and '#'."
+        );
     }
 }
+// Consider updating the error message to instruct users on allowed characters.
 ```
-**Fix applied:**  
-The character '@' has been removed from the UNSUPPORTED_CHARS string. All original logic is intact.
