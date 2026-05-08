@@ -1,30 +1,31 @@
+// hybris/core/AddressValidator.java
+
 package hybris.core;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AddressValidator {
 
-    private static final String DISALLOWED_CHARS = "@#$%^&*!";
+    private static final Logger log = LoggerFactory.getLogger(AddressValidator.class);
 
-    public void validate(Address address) {
-        if(address == null) {
-            throw new IllegalArgumentException("Address cannot be null");
+    private static final String ALLOWED_CHARACTERS_REGEX = "^[a-zA-Z0-9 .,'-]+$";
+
+    public boolean validate(Address address) {
+        if (address == null) {
+            log.warn("Address validation failed: Address is null.");
+            throw new ValidationException("Address must not be null.");
         }
-        String addrStr = address.getFullAddress();
-        StringBuilder foundChars = new StringBuilder();
-        for (char c : DISALLOWED_CHARS.toCharArray()) {
-            if (addrStr.indexOf(c) >= 0) {
-                if (foundChars.length() > 0) {
-                    foundChars.append(", ");
-                }
-                foundChars.append("'").append(c).append("'");
-            }
+        if (address.getFullAddress() == null) {
+            log.warn("Address validation failed: Full address is null.");
+            throw new ValidationException("Full address must not be null.");
         }
-        if (foundChars.length() > 0) {
-            throw new IllegalArgumentException(
-                "Address contains unsupported special character(s): " + foundChars.toString() + ". Please remove unsupported characters.");
+        if (!address.getFullAddress().matches(ALLOWED_CHARACTERS_REGEX)) {
+            log.warn("Address validation failed due to invalid characters.");
+            throw new ValidationException("Address contains invalid characters. Allowed: letters, numbers, spaces, . , ' -");
         }
-        // proceed with rest of validation
+        //... further address validations
+        return true;
     }
+
 }
-```
-**Explanation of change:**  
-The code now collects all unsupported special characters found in the address and, if any are present, throws an exception listing all of them in a clear error message. This provides a clearer and more actionable message for the user, as requested. All original logic is preserved, and the only change is the aggregation and reporting of all found unsupported special characters.
