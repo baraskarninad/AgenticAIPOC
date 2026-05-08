@@ -1,15 +1,17 @@
-// In hybris/core/AddressValidator.java
-// Add/Update validation logic to check allowed characters and provide meaningful errors
-public void validate(String address) {
-    if (address == null || address.isEmpty()) {
-        throw new IllegalArgumentException("Address cannot be empty");
+package hybris.core;
+
+public class AddressValidator {
+
+    private static final String ALLOWED_CHAR_REGEX = "[^a-zA-Z0-9.,#@\s]";
+
+    public boolean validate(String address) {
+        // Clean input, allow '@' if desired
+        String cleanedAddress = address.replaceAll(ALLOWED_CHAR_REGEX, "");
+        // Validation logic...
+        return !address.matches(".*[^a-zA-Z0-9.,#@\s].*");
     }
-    // Allow letters, digits, common punctuation (customize regex as needed)
-    if (!address.matches("[a-zA-Z0-9 ,.-/#]+")) {
-        throw new IllegalArgumentException(
-            "Address contains unsupported special characters. Allowed characters: letters, digits, spaces, ',', '.', '-', '/', and '#'."
-        );
-    }
+
+    // Other methods and logic remain unchanged
+    // You may have additional constructors, fields, or methods here
 }
-// Consider updating the error message to instruct users on allowed characters.
 ```
