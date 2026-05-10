@@ -1,31 +1,23 @@
-// hybris/core/AddressValidator.java
-
 package hybris.core;
 
 public class AddressValidator {
 
-    // Existing logic and fields (if any) remain here
+    private static final String UNSUPPORTED_CHARACTERS = "@"; // add other unsupported characters
 
-    // ... potentially other methods ...
+    // Existing logic...
 
-    // Allow additional characters in the validation logic as per updated requirements.
-    public boolean isValidAddress(String address) {
-        // Example fix: Update regex to allow more permitted characters
-        String updatedPattern = "^[a-zA-Z0-9 .,'\\-#]+$"; // Add allowed special chars as needed
-        return address != null && address.matches(updatedPattern);
-    }
-
-    // Optionally, provide user feedback on invalid input
-    public String getInvalidCharacters(String address) {
-        String pattern = "[a-zA-Z0-9 .,'\\-#]";
-        StringBuilder invalid = new StringBuilder();
-        for (char c : address.toCharArray()) {
-            if (!String.valueOf(c).matches(pattern)) {
-                invalid.append(c);
+    public boolean validate(String address) {
+        for (char c : UNSUPPORTED_CHARACTERS.toCharArray()) {
+            if (address.contains(String.valueOf(c))) {
+                // Throw or return error with a user-friendly message
+                throw new IllegalArgumentException("Address contains unsupported character: " + c);
             }
         }
-        return invalid.length() > 0 ? invalid.toString() : null;
+        // Proceed with other validations...
+        // Existing validation logic goes here
+        return true;
     }
 
-    // ... remaining existing logic and methods (if any) ...
+    // Existing methods, constructors, etc.
+
 }
