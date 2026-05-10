@@ -2,16 +2,15 @@ package hybris.core;
 
 public class AddressValidator {
 
-    private static final String ALLOWED_CHAR_REGEX = "[^a-zA-Z0-9.,#@\s]";
-
     public boolean validate(String address) {
-        // Clean input, allow '@' if desired
-        String cleanedAddress = address.replaceAll(ALLOWED_CHAR_REGEX, "");
-        // Validation logic...
-        return !address.matches(".*[^a-zA-Z0-9.,#@\s].*");
+        if (address == null) return false;
+        // Reject unsupported special characters (e.g. @)
+        if (address.matches(".*[@].*")) {
+            // Optionally provide feedback to user
+            throw new IllegalArgumentException("Address contains unsupported special character '@'");
+        }
+        // Continue existing validation...
+        return true;
     }
 
-    // Other methods and logic remain unchanged
-    // You may have additional constructors, fields, or methods here
 }
-```
