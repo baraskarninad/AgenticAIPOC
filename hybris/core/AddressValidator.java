@@ -1,29 +1,20 @@
-package storerepo.hybris.core;
+package hybris.core;
 
 public class AddressValidator {
+    // In hybris.core.AddressValidator.java
+    private static final String UNSUPPORTED_CHARS = "#$%&*"; // '@' removed to relax validation
 
-    // Example: Allow '@' in address validation (Java)
-    private static final String ADDRESS_ALLOWED_CHARS = "^[a-zA-Z0-9\\s#,.@-]+$";
-
-    public boolean isValidAddress(String address) {
-        if(address == null) return false;
-        return address.matches(ADDRESS_ALLOWED_CHARS);
-    }
-
-    // Optionally, show user-friendly error if validation fails
-    public void validateAddress(String address) throws AddressValidationException {
-        if (!isValidAddress(address)) {
-            throw new AddressValidationException("Address contains unsupported characters. Allowed: letters, digits, space, #, ., ,, @, -");
+    public boolean validateAddress(String address) {
+        for (char c : UNSUPPORTED_CHARS.toCharArray()) {
+            if (address.contains(String.valueOf(c))) {
+                // Optionally, log the error, provide user guidance, or relax validation if needed
+                throw new IllegalArgumentException("Address contains unsupported special character '" + c + "'");
+            }
         }
+        // proceed with rest of validation
+        return true;
     }
 
-    // Any other existing logic can remain here as-is
-
+    // To relax validation, either remove '@' from UNSUPPORTED_CHARS or allow configuration at runtime
 }
 ```
-**Note**:
-
-- The only change applied is to the regex for `ADDRESS_ALLOWED_CHARS`:
-    - Was: `"^[a-zA-Z0-9\s#,.-]+$"`
-    - Fixed: `"^[a-zA-Z0-9\\s#,.@-]+$"` (now allows `@` and escapes `\s` properly for Java string literals)
-- All other class structure and logic remains exactly as previously written.
