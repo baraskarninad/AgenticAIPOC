@@ -1,45 +1,40 @@
-package your.package.name; // Adjust this to your actual package
+package hybris.core;
 
-public class AddressValidator {
+import org.apache.log4j.Logger;
 
-    // ... possibly other member variables, methods, etc.
+public class AddressValidator extends SomeSuperValidator {
+    private static final Logger log = Logger.getLogger(AddressValidator.class);
 
-    public ValidationResult validate(Address address) {
-        // BEGIN: Fix applied: Add street sanitization and character validation
-        String sanitizedStreet = sanitize(address.getStreet());
-        if (!isValidCharacters(sanitizedStreet)) {
-            return ValidationResult.error("Street address contains invalid characters. Allowed: [A-Z,a-z,0-9, ., -]");
+    @Override
+    public boolean validate(Address address) {
+        String sanitizedStreet = address.getStreet().replaceAll("[^a-zA-Z0-9 .'-]", "");
+        // Optionally: log and return clear error if sanitization removes forbidden chars
+        if (!sanitizedStreet.equals(address.getStreet())) {
+            log.warn("Address validation failed due to invalid characters.");
+            return false;
         }
-        // END: Fix applied
-        
-        // Original logic preserved
-        if (address.getStreet() == null || address.getStreet().isEmpty()) {
-            return ValidationResult.error("Street address cannot be empty.");
+        // Existing validation logic
+        if (address == null) {
+            log.error("Address object is null.");
+            return false;
         }
-        if (address.getCity() == null || address.getCity().isEmpty()) {
-            return ValidationResult.error("City cannot be empty.");
+        if (address.getStreet() == null || address.getStreet().trim().isEmpty()) {
+            log.warn("Street information is missing.");
+            return false;
         }
-        if (address.getPostalCode() == null || address.getPostalCode().isEmpty()) {
-            return ValidationResult.error("Postal code cannot be empty.");
+        if (address.getCity() == null || address.getCity().trim().isEmpty()) {
+            log.warn("City information is missing.");
+            return false;
         }
-        if (!address.getPostalCode().matches("\\d{5}")) {
-            return ValidationResult.error("Postal code must be 5 digits.");
+        if (address.getPostalCode() == null || address.getPostalCode().trim().isEmpty()) {
+            log.warn("Postal code is missing.");
+            return false;
         }
-        // Maybe more validation logic here...
-
-        return ValidationResult.success();
-    }
-    
-    private String sanitize(String input) {
-        return input.replaceAll("[^A-Za-z0-9 .-]", ""); // Only allow safe characters
-    }
-
-    private boolean isValidCharacters(String input) {
-        return input.matches("^[A-Za-z0-9 .-]+$");
+        if (address.getCountry() == null || address.getCountry().trim().isEmpty()) {
+            log.warn("Country information is missing.");
+            return false;
+        }
+        // Any additional original logic
+        return super.validate(address);
     }
 }
-```
-**Note:**  
-- If your package name is different, adjust the `package` statement accordingly.  
-- All existing logic is preserved; only the street validation logic is inserted before the original checks.  
-- No code is summarized or removed.
