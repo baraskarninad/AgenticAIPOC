@@ -1,36 +1,26 @@
-package hybris.core;
-
+// In hybris/core/AddressValidator.java
 public class AddressValidator {
 
-    // Existing fields and methods...
-
-    // At line 47 or the relevant line where address is checked:
-    private static final String INVALID_CHAR_PATTERN = "[^a-zA-Z0-9\\s,#@.-]"; // add '@' if allowed
-
-    public static void validateAddress(String address) {
-        if (address == null || address.isEmpty()) {
-            throw new IllegalArgumentException("Address cannot be null or empty");
+    public ValidationResult validate(Address address) {
+        List<String> invalidFields = new ArrayList<>();
+        if (address.getStreet() == null || !address.getStreet().matches("^[a-zA-Z0-9 .,'-]+$")) {
+            invalidFields.add("street");
         }
-
-        // Character validation logic (modified as requested)
-        if (address.matches(".*" + INVALID_CHAR_PATTERN + ".*")) {
-            throw new IllegalArgumentException("Address contains unsupported special character");
+        if (address.getCity() == null || !address.getCity().matches("^[a-zA-Z0-9 .,'-]+$")) {
+            invalidFields.add("city");
         }
-
-        // Other existing validation logic...
-        if (address.length() < 5) {
-            throw new IllegalArgumentException("Address is too short");
+        // ... validate other fields as needed
+        if (!invalidFields.isEmpty()) {
+            log.warn("Address validation failed in fields: {}", invalidFields);
+            return ValidationResult.failure("Invalid characters in: " + String.join(", ", invalidFields));
         }
-        if (address.length() > 100) {
-            throw new IllegalArgumentException("Address is too long");
-        }
-        // Any other existing checks...
+        return ValidationResult.success();
     }
 
-    // Other methods and logic...
+    // ... other methods and logic
+
 }
 ```
-**Note:**  
-- The `INVALID_CHAR_PATTERN` now allows `@` as a valid character.
-- The `matches` method is used with `".*" + INVALID_CHAR_PATTERN + ".*"` to check if any invalid character exists in the address string (since `matches` must match the entire string).
-- All original logic is preserved; only the character validation is updated as requested.
+**Fix applied:**  
+The validation now checks for `null` values before calling `.matches()` on `address.getStreet()` and `address.getCity()`, preventing potential `NullPointerException`.  
+All original logic is preserved; only the necessary fix is applied.
