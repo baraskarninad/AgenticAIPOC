@@ -1,77 +1,78 @@
 package store.facades.populators;
 
-import java.math.BigDecimal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
-
-import org.apache.log4j.Logger;
 
 public class StoreProductPricePopulator {
 
-    private static final Logger LOG = Logger.getLogger(StoreProductPricePopulator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
 
-    public void populatePrices(List<PriceRow> priceRows) {
-        BigDecimal msrpPrice = null;
-        BigDecimal pmatPrice = null;
+    // Existing variables
+    private Double msrpPrice;
+    private Double pmatPrice;
 
-        // In StoreProductPricePopulator.java
+    public void populate(Product product, List<PriceRow> priceRows) {
+        // Example code fix for StoreProductPricePopulator.java
+
         if (priceRows == null || priceRows.isEmpty()) {
-            LOG.error("Price rows are null or empty, cannot populate msrpPrice or PMATPrice.");
-            msrpPrice = BigDecimal.ZERO;
-            pmatPrice = BigDecimal.ZERO;
-            // Optionally return or throw ApplicationException
+            LOG.error("Price rows are null or empty for product: {}", product.getCode());
+            msrpPrice = getDefaultMsrpPrice();
+            pmatPrice = getDefaultPmatPrice();
+            // Optionally: skip product or set error flag
             return;
         }
+        if (msrpPrice == null) {
+            LOG.warn("msrpPrice is null for product: {}", product.getCode());
+            msrpPrice = getDefaultMsrpPrice();
+        }
+        if (pmatPrice == null) {
+            LOG.warn("pmatPrice is null for product: {}", product.getCode());
+            pmatPrice = getDefaultPmatPrice();
+        }
 
-        // Original logic for extracting msrpPrice and pmatPrice from priceRows
+        // Example of original logic that must not be removed or abstracted
         for (PriceRow row : priceRows) {
-            if("MSRP".equals(row.getType())) {
+            if ("MSRP".equals(row.getPriceType())) {
                 msrpPrice = row.getPrice();
             }
-            if("PMAT".equals(row.getType())) {
+            if ("PMAT".equals(row.getPriceType())) {
                 pmatPrice = row.getPrice();
             }
         }
 
-        // Defensive null handling for msrp/PMAT
-        if (msrpPrice == null) {
-            LOG.warn("msrpPrice attribute is null, setting default value.");
-            msrpPrice = BigDecimal.ZERO;
-        }
-        if (pmatPrice == null) {
-            LOG.warn("PMATPrice attribute is null, setting default value.");
-            pmatPrice = BigDecimal.ZERO;
-        }
-
-        // Continue setting these on target object or wherever needed
-        setMsrpPrice(msrpPrice);
-        setPmatPrice(pmatPrice);
+        // Set prices on product or DTO
+        product.setMsrpPrice(msrpPrice);
+        product.setPmatPrice(pmatPrice);
     }
 
-    // Placeholder setters
-    private void setMsrpPrice(BigDecimal msrpPrice) {
-        // Implementation to set msrpPrice
+    private Double getDefaultMsrpPrice() {
+        // Example implementation
+        return 0.0;
     }
 
-    private void setPmatPrice(BigDecimal pmatPrice) {
-        // Implementation to set pmatPrice
+    private Double getDefaultPmatPrice() {
+        // Example implementation
+        return 0.0;
     }
 
-    // Placeholder class for PriceRow
+    // Dummy inner classes for context (should exist elsewhere in your codebase)
+    public static class Product {
+        private String code;
+        private Double msrpPrice;
+        private Double pmatPrice;
+
+        public String getCode() { return code; }
+        public void setMsrpPrice(Double price) { this.msrpPrice = price; }
+        public void setPmatPrice(Double price) { this.pmatPrice = price; }
+    }
+
     public static class PriceRow {
-        private String type;
-        private BigDecimal price;
+        private String priceType;
+        private Double price;
 
-        public PriceRow(String type, BigDecimal price) {
-            this.type = type;
-            this.price = price;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public BigDecimal getPrice() {
-            return price;
-        }
+        public String getPriceType() { return priceType; }
+        public Double getPrice() { return price; }
     }
 }
+```
