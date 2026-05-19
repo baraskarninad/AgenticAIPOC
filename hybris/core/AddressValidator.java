@@ -1,17 +1,18 @@
+// In hybris/core/AddressValidator.java
 package hybris.core;
 
 public class AddressValidator {
 
-    public void validate(String inputAddress) throws ValidationException {
-        // Example Regex Pattern (modify as per business rules)
-        String pattern = "^[a-zA-Z0-9 .,-]+$";
-        if (!inputAddress.matches(pattern)) {
-            // Provide specific feedback to user
-            throw new ValidationException("Invalid address: only letters, numbers, spaces, and . , - are allowed.");
-        }
+    // Add '@' to the ALLOWED_CHARACTERS as its inclusion is business-approved.
+    private static final String ALLOWED_CHARACTERS = "A-Za-z0-9 ,.-#@";
 
-        // ... any other existing validation logic ...
+    public void validate(String address) {
+        if (address.matches("^[" + ALLOWED_CHARACTERS + "]+$")) {
+            // pass
+        } else {
+            throw new IllegalArgumentException("Address contains unsupported special character");
+        }
     }
 
-    // ... other methods and logic ...
+    // Add '@' to the ALLOWED_CHARACTERS if its inclusion is business-approved.
 }
