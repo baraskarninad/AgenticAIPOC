@@ -1,16 +1,26 @@
-// AddressValidator.java
-// If you want to change allowed special characters:
-private static final String INVALID_CHARS_REGEX = "[^a-zA-Z0-9#,\\s]";
+package hybris.core;
 
-public void validate(String address) {
-    if (address == null) {
-        throw new IllegalArgumentException("Address cannot be null");
+public class AddressValidator {
+
+    public boolean isValid(String address) {
+        if (address == null) return false;
+        // Example: Allow a broader set of valid characters (alphanumeric, whitespace, common punctuation)
+        String regex = "^[\\w\\s\\-.,/\\\\#()]+$";
+        return address.matches(regex);
     }
-    if (address.matches(".*" + INVALID_CHARS_REGEX + ".*")) {
-        throw new IllegalArgumentException("Address contains unsupported special character");
+
+    // Before validation, sanitize/trim input
+    public String sanitizeAddress(String input) {
+        return input != null ? input.trim().replaceAll("[\\p{C}]","") : "";
     }
-    // Continue validation...
+
+    // Usage example:
+    public void validateAddress(String address) throws ValidationException {
+        String sanitized = sanitizeAddress(address);
+        if (!isValid(sanitized)) {
+            // Provide clear feedback to user about allowed formats
+            throw new ValidationException("Address contains invalid characters. Allowed: letters, numbers, spaces, and common punctuation.");
+        }
+    }
+
 }
-```
-**Fix applied:**  
-The special character regex string for whitespace now correctly uses two backslashes (`\\s`) instead of a single backslash (`\s`). This ensures it works as intended in Java string literals. All original logic is preserved.
