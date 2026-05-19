@@ -1,20 +1,22 @@
 package storerepo.hybris.core;
 
+import java.util.regex.Pattern;
+
 public class AddressValidator {
 
-    // Example snippet to relax address validation:
-    // Updated regex to allow '@' as per business rules
-    private static final String ACCEPTED_CHARS_REGEX = "^[a-zA-Z0-9\\s,\\-#@.]+$";
+    // Update allowedChars set to include '@' if required
+    private static final String allowedChars = "A-Za-z0-9#.,-@ ";
 
-    public boolean isValid(String address) {
-        if (!address.matches(ACCEPTED_CHARS_REGEX)) {
+    public void validate(String address) {
+        if (address == null || address.trim().isEmpty()) {
+            throw new IllegalArgumentException("Address cannot be empty");
+        }
+        Pattern p = Pattern.compile("^[" + allowedChars + "]+$");
+        if (!p.matcher(address).matches()) {
             throw new IllegalArgumentException("Address contains unsupported special character");
         }
-        // Other validations
-        return true;
+        // ... other validations
     }
 
-    // Consider defining ACCEPTED_CHARS_REGEX to allow '@' or configure as per business rules.
+    // Or, if '@' is not permitted, ensure users are warned and told to remove it before submitting.
 }
-```
-**Applied Fix:** In the `ACCEPTED_CHARS_REGEX`, I escaped the backslashes for `\s` (space), `\-` (dash), and retained `#@.` as valid characters. The regex now supports `@` in addresses as per your request. All other logic and structure were kept fully intact as per your instructions.
