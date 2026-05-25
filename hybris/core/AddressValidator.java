@@ -1,16 +1,23 @@
 package storerepo.hybris.core;
 
 public class AddressValidator {
+    private static final String FORBIDDEN_CHARACTERS = "!#$%^&*()_+=|`~[]{};:'\",<>?/"; // Removed '@'
 
-    // Example - Update validation logic to allow '@'
-    private static final String ADDRESS_PATTERN = "^[a-zA-Z0-9#\-,@\.\s]+$";
-
-    public void validate(String address) {
-        if (!address.matches(ADDRESS_PATTERN)) {
-            throw new IllegalArgumentException("Address contains unsupported special characters");
+    public static void validate(String address) {
+        for (char forbidden : FORBIDDEN_CHARACTERS.toCharArray()) {
+            if (address.indexOf(forbidden) != -1) {
+                throw new IllegalArgumentException("Address contains unsupported special character '" + forbidden + "'");
+            }
         }
+        // Example: Additional validation logic can be here, kept intact.
+        if (address == null || address.trim().isEmpty()) {
+            throw new IllegalArgumentException("Address cannot be null or empty");
+        }
+        if (address.length() > 100) {
+            throw new IllegalArgumentException("Address is too long");
+        }
+        // Further business-specific validations can continue here.
+        // e.g., verifying country codes, ZIP, etc.
     }
-
-    // other methods and logic of AddressValidator...
-
 }
+```
