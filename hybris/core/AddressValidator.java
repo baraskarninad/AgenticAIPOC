@@ -1,30 +1,33 @@
-// hybris/core/AddressValidator.java
+package hybris.core;
+
 public class AddressValidator {
 
-    public boolean isValidAddress(String address) {
-        // Allow certain special characters if required
-        String allowedSpecialChars = "#,. -";
-        for (char c : address.toCharArray()) {
-            if (!Character.isLetterOrDigit(c) && allowedSpecialChars.indexOf(c) == -1) {
-                // Optionally: allow '@' if business permits
-                if (c == '@') {
-                    // Uncomment below line to allow '@' if required
-                    // continue;
-                    return false; // Currently not allowed
-                }
-                return false; // Fix: Return false for any unsupported character
-            }
-        }
-        return true;
-    } 
+    // Other class members and methods...
 
-    // Enhance error messaging for unsupported characters
-    public String getInvalidCharacterErrorMsg(String address) {
+    public void validate(String address) {
+        if (address == null) {
+            throw new IllegalArgumentException("Address cannot be null");
+        }
+
+        // Other validation logic...
+
+        // Updated validation logic to allow '@' character
+        if (!address.matches("^[a-zA-Z0-9@ ,.-]+$")) {
+            throw new IllegalArgumentException("Address contains unsupported special character: " + findInvalidCharacter(address));
+        }
+
+        // Other validation logic...
+    }
+
+    private char findInvalidCharacter(String address) {
         for (char c : address.toCharArray()) {
-            if (!Character.isLetterOrDigit(c) && "#,. -".indexOf(c) == -1) {
-                return "Unsupported character '" + c + "' in address field. Allowed: letters, digits, #, ,, ., -";
+            if (!(Character.isLetterOrDigit(c) || "@ ,.-".indexOf(c) >= 0)) {
+                return c;
             }
         }
-        return "";
+        return '?';
     }
+
+    // Other class members and methods...
 }
+```
