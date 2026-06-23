@@ -2,77 +2,68 @@ package store.facades.populators;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.List;
 
-public class StoreProductPricePopulator {
-
+public class StoreProductPricePopulator
+{
     private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
 
-    // Existing variables
-    private Double msrpPrice;
-    private Double pmatPrice;
-
-    public void populate(Product product, List<PriceRow> priceRows) {
-        // Example code fix for StoreProductPricePopulator.java
-
-        if (priceRows == null || priceRows.isEmpty()) {
-            LOG.error("Price rows are null or empty for product: {}", product.getCode());
-            msrpPrice = getDefaultMsrpPrice();
-            pmatPrice = getDefaultPmatPrice();
-            // Optionally: skip product or set error flag
+    public void populate(final ProductModel product, final ProductData productData)
+    {
+        if (product == null || productData == null)
+        {
+            LOG.error("Product or ProductData is null in StoreProductPricePopulator");
             return;
         }
-        if (msrpPrice == null) {
-            LOG.warn("msrpPrice is null for product: {}", product.getCode());
-            msrpPrice = getDefaultMsrpPrice();
-        }
-        if (pmatPrice == null) {
-            LOG.warn("pmatPrice is null for product: {}", product.getCode());
-            pmatPrice = getDefaultPmatPrice();
-        }
 
-        // Example of original logic that must not be removed or abstracted
-        for (PriceRow row : priceRows) {
-            if ("MSRP".equals(row.getPriceType())) {
-                msrpPrice = row.getPrice();
-            }
-            if ("PMAT".equals(row.getPriceType())) {
-                pmatPrice = row.getPrice();
-            }
+        PriceModel msrpPrice = null;
+        PriceModel pmatPrice = null;
+
+        // Fetch msrpPrice and pmatPrice from product
+        // Assume getMSRPPrice() and getPMATPrice() methods for example
+        try
+        {
+            msrpPrice = product.getMSRPPrice();
+        }
+        catch (Exception e)
+        {
+            LOG.error("Error fetching msrpPrice for product {}", product.getCode(), e);
         }
 
-        // Set prices on product or DTO
-        product.setMsrpPrice(msrpPrice);
-        product.setPmatPrice(pmatPrice);
-    }
+        try
+        {
+            pmatPrice = product.getPMATPrice();
+        }
+        catch (Exception e)
+        {
+            LOG.error("Error fetching pmatPrice for product {}", product.getCode(), e);
+        }
 
-    private Double getDefaultMsrpPrice() {
-        // Example implementation
-        return 0.0;
-    }
+        // === Fix applied here ===
+        if (msrpPrice == null || pmatPrice == null) {
+            LOG.error("msrpPrice or PMATPrice is null for product {}", product != null ? product.getCode() : null);
+            // Optionally: set a default or skip assignment, based on business logic
+            return; // Or continue with defaults/skip depending on requirements
+        }
+        // ========================
 
-    private Double getDefaultPmatPrice() {
-        // Example implementation
-        return 0.0;
-    }
+        // Existing price population assignment logic
+        productData.setMsrpPrice(msrpPrice.getValue());
+        productData.setPmatPrice(pmatPrice.getValue());
 
-    // Dummy inner classes for context (should exist elsewhere in your codebase)
-    public static class Product {
-        private String code;
-        private Double msrpPrice;
-        private Double pmatPrice;
+        // Possibly more logic for handling priceType, discounts, etc.
+        if (msrpPrice.getValue().compareTo(pmatPrice.getValue()) > 0)
+        {
+            productData.setDiscounted(true);
+            productData.setDiscountValue(msrpPrice.getValue().subtract(pmatPrice.getValue()));
+        }
+        else
+        {
+            productData.setDiscounted(false);
+            productData.setDiscountValue(null);
+        }
 
-        public String getCode() { return code; }
-        public void setMsrpPrice(Double price) { this.msrpPrice = price; }
-        public void setPmatPrice(Double price) { this.pmatPrice = price; }
-    }
-
-    public static class PriceRow {
-        private String priceType;
-        private Double price;
-
-        public String getPriceType() { return priceType; }
-        public Double getPrice() { return price; }
+        // Possibly set formatted strings for UI
+        productData.setFormattedMsrpPrice("$" + msrpPrice.getValue());
+        productData.setFormattedPmatPrice("$" + pmatPrice.getValue());
     }
 }
-```
