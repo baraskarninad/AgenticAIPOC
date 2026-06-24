@@ -2,32 +2,28 @@ package hybris.core;
 
 public class AddressValidator {
 
-    // Other class members and methods...
+    // Example fix: Allow '@' if required 
+    private static final String UNSUPPORTED_CHARS_REGEX = "[^a-zA-Z0-9\\s#,.@-]";  // '@' allowed
 
     public void validate(String address) {
-        if (address == null) {
-            throw new IllegalArgumentException("Address cannot be null");
+        if (address.matches(UNSUPPORTED_CHARS_REGEX)) {
+            throw new IllegalArgumentException("Address contains unsupported special character(s)");
         }
-
-        // Other validation logic...
-
-        // Updated validation logic to allow '@' character
-        if (!address.matches("^[a-zA-Z0-9@ ,.-]+$")) {
-            throw new IllegalArgumentException("Address contains unsupported special character: " + findInvalidCharacter(address));
+        // Add further address validation logic as required
+        if (address == null || address.trim().isEmpty()) {
+            throw new IllegalArgumentException("Address must not be empty");
         }
-
-        // Other validation logic...
+        if (address.length() > 255) {
+            throw new IllegalArgumentException("Address must not exceed 255 characters");
+        }
+        // Example: No consecutive special symbols allowed
+        if (address.matches(".*([#,.@-])\\1+.*")) {
+            throw new IllegalArgumentException("Address contains consecutive special characters");
+        }
+        // Example: Address must start with a letter or number
+        if (!address.matches("^[a-zA-Z0-9].*")) {
+            throw new IllegalArgumentException("Address must start with a letter or number");
+        }
+        // More validation logic as needed
     }
-
-    private char findInvalidCharacter(String address) {
-        for (char c : address.toCharArray()) {
-            if (!(Character.isLetterOrDigit(c) || "@ ,.-".indexOf(c) >= 0)) {
-                return c;
-            }
-        }
-        return '?';
-    }
-
-    // Other class members and methods...
 }
-```
