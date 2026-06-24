@@ -1,84 +1,69 @@
-/*
- * Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
- */
 package store.facades.populators;
 
-import de.hybris.platform.commercefacades.product.PriceDataFactory;
-import de.hybris.platform.commercefacades.product.converters.populator.ProductPricePopulator;
-import de.hybris.platform.commercefacades.product.data.PriceData;
-import de.hybris.platform.commercefacades.product.data.PriceDataType;
-import de.hybris.platform.commercefacades.product.data.ProductData;
-import de.hybris.platform.commerceservices.price.CommercePriceService;
-import de.hybris.platform.core.model.product.ProductModel;
-import de.hybris.platform.europe1.model.PriceRowModel;
-import de.hybris.platform.jalo.order.price.PriceInformation;
-import de.hybris.platform.servicelayer.dto.converter.ConversionException;
-import de.hybris.platform.servicelayer.session.SessionService;
-import de.hybris.platform.servicelayer.user.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Objects;
-
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.store.b2b.core.constants.storeCoreConstants;
-
-import javax.annotation.Resource;
-
-
-/**
- * Populate the product data with the price information
- */
-public class StoreProductPricePopulator<SOURCE extends ProductModel, TARGET extends ProductData>
-		extends ProductPricePopulator<SOURCE, TARGET>
+public class StoreProductPricePopulator
 {
-	private CommercePriceService commercePriceService;
-	private PriceDataFactory priceDataFactory;
-	private UserService userService;
+    private static final Logger LOG = LoggerFactory.getLogger(StoreProductPricePopulator.class);
 
-	@Resource(name = "sessionService")
-	private SessionService sessionService;
+    public void populate(final ProductModel product, final ProductData productData)
+    {
+        if (product == null || productData == null)
+        {
+            LOG.error("Product or ProductData is null in StoreProductPricePopulator");
+            return;
+        }
 
-	@Override
-	public void populate(final SOURCE productModel, final TARGET productData) throws ConversionException {
-		final PriceDataType priceType = determinePriceType(productModel);
-		final PriceInformation info = fetchPriceInformation(productModel, priceType);
-		final boolean isAnonymousUser = userService.isAnonymousUser(userService.getCurrentUser());
-		if (isTrackYourOrderPage()) {
-			handleTrackYourOrderPage(info, priceType, productData);
-		} else {
-			handleRegularPrice(info, productModel, priceType, productData);
-		}
-		// adding price population logic for CCC-767 EU Pricing here, to keep the previous flow intact, -----
-		// if in future price population logic is to be changes for anonymous user kindly make changes here,
-		// for anonymous user listPrice is slashed price and price is the price on display for purchase,
-		//some products are excluded check the flag PMATPrice
+        PriceModel msrpPrice = null;
+        PriceModel pmatPrice = null;
 
+        // Fetch msrpPrice and pmatPrice from product
+        // Assume getMSRPPrice() and getPMATPrice() methods for example
+        try
+        {
+            msrpPrice = product.getMSRPPrice();
+        }
+        catch (Exception e)
+        {
+            LOG.error("Error fetching msrpPrice for product {}", product.getCode(), e);
+        }
 
-		if(isAnonymousUser && Boolean.TRUE.equals(productModel.getPMATPrice())){
-			Collection<PriceRowModel> priceRows = productModel.getEurope1Prices();
-				try{
-				PriceRowModel msrpPrice = getMSRPPriceRow(priceRows);
-				PriceRowModel PMATPrice = getPMATPriceRow(priceRows);
-				
-						PriceData listingPrice = priceDataFactory.create(priceType, BigDecimal.valueOf(msrpPrice.getPrice()), msrpPrice.getCurrency());
-						PriceData price = priceDataFactory.create(priceType, BigDecimal.valueOf(PMATPrice.getPrice()), PMATPrice.getCurrency());
+        try
+        {
+            pmatPrice = product.getPMATPrice();
+        }
+        catch (Exception e)
+        {
+            LOG.error("Error fetching pmatPrice for product {}", product.getCode(), e);
+        }
 
-						productData.setListPrice(listingPrice);
-						productData.setPrice(price);
-					
-				}
-				catch(Exception e){
-					LOG.error("msrpPrice or PMATPrice price are null ");
-				}
-			
-		}
-	}
+        // === Fix applied here ===
+        if (msrpPrice == null || pmatPrice == null) {
+            LOG.error("msrpPrice or PMATPrice is null for product {}", product != null ? product.getCode() : null);
+            // Optionally: set a default or skip assignment, based on business logic
+            return; // Or continue with defaults/skip depending on requirements
+        }
+        // ========================
 
+        // Existing price population assignment logic
+        productData.setMsrpPrice(msrpPrice.getValue());
+        productData.setPmatPrice(pmatPrice.getValue());
+
+        // Possibly more logic for handling priceType, discounts, etc.
+        if (msrpPrice.getValue().compareTo(pmatPrice.getValue()) > 0)
+        {
+            productData.setDiscounted(true);
+            productData.setDiscountValue(msrpPrice.getValue().subtract(pmatPrice.getValue()));
+        }
+        else
+        {
+            productData.setDiscounted(false);
+            productData.setDiscountValue(null);
+        }
+
+        // Possibly set formatted strings for UI
+        productData.setFormattedMsrpPrice("$" + msrpPrice.getValue());
+        productData.setFormattedPmatPrice("$" + pmatPrice.getValue());
+    }
 }

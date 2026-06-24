@@ -1,77 +1,29 @@
 package hybris.core;
 
-import org.apache.log4j.Logger;
-
-import java.util.regex.Pattern;
-
-/**
- * Validates customer address input for format, length, and allowed characters.
- */
 public class AddressValidator {
 
-    private static final Logger LOG = Logger.getLogger(AddressValidator.class);
-    private static final Pattern VALID_ADDRESS_PATTERN = Pattern.compile("^[a-zA-Z0-9 ,.-]+$");
+    // Example fix: Allow '@' if required 
+    private static final String UNSUPPORTED_CHARS_REGEX = "[^a-zA-Z0-9\\s#,.@-]";  // '@' allowed
 
-    /**
-     * Entry point for validating an address.
-     *
-     * @param address the address string to validate
-     * @throws IllegalArgumentException if validation fails
-     */
-    public void validateAddress(String address) {
-        LOG.info("Starting address validation process.");
-
-        if (address == null) {
-            LOG.error("Address input is null.");
-            throw new NullPointerException("Address input cannot be null");
+    public void validate(String address) {
+        if (address.matches(UNSUPPORTED_CHARS_REGEX)) {
+            throw new IllegalArgumentException("Address contains unsupported special character(s)");
         }
-
-        LOG.debug("Input address: \"" + address + "\"");
-
-        checkEmpty(address);
-        checkLength(address);
-        checkCharacters(address);
-
-        LOG.info("Address validation passed.");
-    }
-
-    /**
-     * Checks if the address is empty.
-     */
-    private void checkEmpty(String address) {
-        LOG.debug("Checking for empty fields...");
-        if (address.trim().isEmpty()) {
-            LOG.warn("Address is empty.");
-            throw new IllegalArgumentException("Address cannot be empty");
+        // Add further address validation logic as required
+        if (address == null || address.trim().isEmpty()) {
+            throw new IllegalArgumentException("Address must not be empty");
         }
-        LOG.debug("Empty field check passed.");
-    }
-
-    /**
-     * Checks if the address length is within acceptable limits.
-     */
-    private void checkLength(String address) {
-        LOG.debug("Checking address length...");
         if (address.length() > 255) {
-            LOG.warn("Address exceeds maximum length.");
-            throw new IllegalArgumentException("Address exceeds maximum allowed length");
+            throw new IllegalArgumentException("Address must not exceed 255 characters");
         }
-        LOG.debug("Length check passed.");
-    }
-
-    /**
-     * Checks for invalid characters in the address.
-     */
-    private void checkCharacters(String address) {
-        LOG.debug("Validating character set...");
-        if (!VALID_ADDRESS_PATTERN.matcher(address).matches()) {
-            for (char c : address.toCharArray()) {
-                if (!Character.isLetterOrDigit(c) && " ,.-".indexOf(c) == -1) {
-                    LOG.error("Invalid character '" + c + "' detected in address field.");
-                    throw new IllegalArgumentException("Address contains unsupported special character '" + c + "'");
-                }
-            }
+        // Example: No consecutive special symbols allowed
+        if (address.matches(".*([#,.@-])\\1+.*")) {
+            throw new IllegalArgumentException("Address contains consecutive special characters");
         }
-        LOG.debug("Character set validation passed.");
+        // Example: Address must start with a letter or number
+        if (!address.matches("^[a-zA-Z0-9].*")) {
+            throw new IllegalArgumentException("Address must start with a letter or number");
+        }
+        // More validation logic as needed
     }
 }
